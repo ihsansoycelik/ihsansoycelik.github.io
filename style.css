@@ -1,0 +1,129 @@
+/* Reset & Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 14px; /* Approx 13px or 14px */
+    background-color: #FFFFFF;
+    color: #000000;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+}
+
+ul {
+    list-style: none;
+}
+
+a {
+    text-decoration: none;
+    color: #000000;
+    display: block;
+    cursor: pointer;
+}
+
+/* Grid Layout */
+.grid-container {
+    display: grid;
+    grid-template-columns: 15% 15% 1fr; /* 15% 15% Remaining */
+    min-height: 100vh;
+}
+
+/* Columns */
+.column {
+    padding: 20px; /* Ample padding */
+    border-right: 1px solid #E5E5E5; /* Vertical dividers */
+}
+
+.column:last-child {
+    border-right: none;
+}
+
+/* Sticky Positioning */
+.nav-column, .filter-column {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+}
+
+/* Navigation & Filters */
+.nav-column li, .filter-column li {
+    margin-bottom: 8px;
+}
+
+.nav-link, .tag-link {
+    transition: color 0.2s ease;
+}
+
+/* Project List */
+.project-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid transparent; /* To keep size consistent if we add border later */
+}
+
+.project-title {
+    font-weight: normal;
+}
+
+.project-meta {
+    text-align: right;
+    color: #000;
+}
+
+/* Hover Effects */
+.project-item:hover .project-title {
+    text-decoration: underline;
+    /* or turn grey as per prompt suggestion: "subtle underline or turn grey" */
+    /* color: #666; */
+    text-decoration-color: #000;
+    text-decoration-thickness: 1px;
+}
+
+/* Active states for filters (optional visual cue) */
+.active {
+    font-weight: bold;
+}
+
+/* Responsiveness */
+@media (max-width: 768px) {
+    .grid-container {
+        display: block; /* Collapse to single column */
+    }
+
+    .column {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #E5E5E5;
+        height: auto;
+        position: static; /* Remove sticky */
+        padding: 15px;
+    }
+
+    .nav-column ul, .filter-column ul {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 15px;
+        padding-bottom: 5px; /* For scrollbar space */
+    }
+
+    /* Hide scrollbar for cleaner look on mobile */
+    .nav-column ul::-webkit-scrollbar, .filter-column ul::-webkit-scrollbar {
+        display: none;
+    }
+    .nav-column ul, .filter-column ul {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+
+    .nav-column li, .filter-column li {
+        margin-bottom: 0;
+        white-space: nowrap;
+    }
+}
