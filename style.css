@@ -7,11 +7,12 @@
 
 body {
     font-family: Helvetica, Arial, sans-serif;
-    font-size: 14px; /* Approx 13px or 14px */
+    font-size: 14px;
     background-color: #FFFFFF;
     color: #000000;
-    line-height: 1.4;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden; /* Prevent horizontal scroll from connector lines */
 }
 
 ul {
@@ -21,109 +22,390 @@ ul {
 a {
     text-decoration: none;
     color: #000000;
-    display: block;
+    display: inline-block;
     cursor: pointer;
+    padding: 2px 8px; /* Background padding */
+}
+
+/* Header */
+.site-header {
+    padding: 20px 20px 10px 20px;
+    border-bottom: 2px solid #000; /* Bold top line */
+    margin-bottom: 20px;
+}
+
+.site-header h1 {
+    font-size: 16px;
+    font-weight: bold;
 }
 
 /* Grid Layout */
 .grid-container {
     display: grid;
-    grid-template-columns: 15% 15% 1fr; /* 15% 15% Remaining */
-    min-height: 100vh;
+    grid-template-columns: 200px 200px 1fr; /* Fixed widths for first two columns */
+    /* Use fixed width to make drawing lines easier */
+    padding: 0 20px;
 }
 
-/* Columns */
-.column {
-    padding: 20px; /* Ample padding */
-    border-right: 1px solid #E5E5E5; /* Vertical dividers */
+/* Column Headers */
+.column-header {
+    font-size: 12px;
+    font-weight: normal;
+    color: #000;
+    margin-bottom: 20px;
+    padding-left: 25px; /* Align with text after number */
 }
 
-.column:last-child {
-    border-right: none;
+/* List Items */
+.tree-list li, .project-item {
+    margin-bottom: 12px;
+    position: relative;
+    display: flex;
+    align-items: baseline;
 }
 
-/* Sticky Positioning */
-.nav-column, .filter-column {
-    position: sticky;
+.num {
+    font-size: 10px;
+    color: #999;
+    width: 20px;
+    margin-right: 5px;
+    display: inline-block;
+    text-align: right;
+}
+
+/* Active State */
+.nav-link.active, .tag-link.active {
+    background-color: #E0E0E0; /* Grey background */
+    font-weight: normal;
+}
+
+/* Tree Lines Logic
+   We need to draw a line from the ACTIVE item in the previous column
+   to the list in the current column.
+
+   However, CSS can't easily connect across grid cells without a shared container.
+   But we can simulate it because we know the layout.
+
+   The "Minus One" design shows:
+   Item 1 (Active) --------------------|
+                                       |--- Item 1
+                                       |--- Item 2
+                                       |--- Item 3
+
+   Actually, the lines belong to the "Children" usually in a tree view.
+   But here the columns are separate DOM elements.
+
+   We will attach the branching lines to the *items in the destination column* (Column 2 and 3).
+   They need to "reach back" to the active item in the left column.
+
+   Since the active item in Col 1 has a fixed position relative to the top of the list? No, it changes.
+
+   Wait, the design shows the line starting from the RIGHT of the active item in Col 1.
+   Then going right, then splitting up/down to reach items in Col 2.
+
+   Since we have sticky columns, we can't easily rely on absolute positioning across columns if scrolling happens independently.
+   BUT "Column 1 and Column 2 likely stay sticky... while the right column scrolls."
+
+   If Col 1 is sticky, its "Active" item is at a specific Y position.
+   If Col 2 is sticky, its items are at specific Y positions.
+
+   Actually, looking at `image.png`, the lines connect the *active header*?
+   No, it connects "All" to "AI/ML", "BizOps", etc.
+   It looks like a single SVG or a complex border setup.
+
+   Simpler approach for "Vanilla CSS":
+   1. The Active Item in Col 1 has a pseudo element `::after` that draws a horizontal line to the right.
+   2. The Items in Col 2 have a pseudo element `::before` that draws the "fork".
+
+   Problem: The vertical part of the fork needs to connect all items in Col 2.
+
+   Let's look closely at `image.png` again.
+   There is a horizontal line coming out of "All".
+   It hits a vertical bracket `]` shape but facing left `[`.
+   No, it's:
+
+      All -----------------------------+
+                                       |
+                                       +------- AI/ML
+                                       |
+                                       +------- BizOps
+
+   The vertical line spans from the first item of Col 2 to the last item of Col 2?
+   Or rather, the vertical line is flush against the left of Col 2 items.
+
+   Let's try this:
+   - Col 1 Active Item: `::after` -> `position: absolute; right: -50px; width: 50px; border-bottom: 1px solid black;` (Connects to Col 2)
+   - Col 2 List: Border-left?
+
+   The curved corners are the tricky part.
+
+   Let's use a "Bracket" approach on the items in Col 2.
+   Each item in Col 2 needs a line going Left, then curving Up or Down to meet the "Source" line.
+   BUT the "Source" line comes from a specific height (the height of "All").
+
+   This implies we need to know the height of the active item in the previous column to draw the lines correctly.
+   CSS alone cannot know "where the active item in the previous sibling column is".
+
+   HOWEVER, in the screenshot, "All" is the *first* item. "AI/ML" is the *first* item.
+   The layout is incredibly regular.
+
+   If the user selects "Stories" (4th item), does the line come from "Stories"? Yes, presumably.
+
+   To do this purely with CSS is impossible if we want the line to originate exactly from the clicked element across separate grid columns without some Javascript helper or fixed assumptions.
+
+   BUT I can use JavaScript to set a CSS variable `--active-top` on the container, representing the offset of the active item!
+
+   Yes!
+
+   Plan Update details (internal thought):
+   I will use JS to calculate the `offsetTop` of the active element in Col 1 and Col 2.
+   Pass these as CSS variables to the `grid-container`.
+
+   Then in CSS:
+   Col 2 items will have a `::before` line.
+   The vertical line will be a separate element or a pseudo of the container?
+
+   Actually, the design shows a "Parent" line coming from left, splitting into "Children".
+
+   Let's try to make the "Connector" a child of the list item in Col 2.
+
+   Line 1: From Active Col 1 Item to Right Edge of Col 1.
+   Line 2: Vertical Line in Col 2?
+
+   Actually, look at the curves.
+   They look like:
+
+   _______
+          \
+           \_____ Item
+
+   It's a Bezier curve.
+
+   Simplification for "Brutalist" which often uses straight lines or simple radiuses:
+
+   ------|
+         |
+         |------- Item
+
+   With `border-radius`.
+
+   Let's try this implementation:
+
+   JavaScript will:
+   1. Identify the active link in Col 1.
+   2. Identify the active link in Col 2.
+   3. We need to draw lines.
+
+   Since I can't use SVG libraries, I can insert an `<svg>` into the DOM absolutely positioned over the grid to draw these lines.
+   That is "Vanilla JS" and much more robust than CSS hacks for diagonal/curved lines across columns.
+
+   It will look "exactly like this" (smooth curves).
+
+   I will add a `<canvas>` or `<svg>` overlay. SVG is better for resolution.
+
+   I'll add an SVG container `.connections-layer` with `pointer-events: none`.
+   Then in `script.js`, whenever selection changes (or on resize), I calculate coordinates and draw `<path>` elements.
+
+   Path 1: `M x1,y1 C cx1,cy1 cx2,cy2 x2,y2`
+
+   Start Point: Right center of Active Col 1 Link.
+   End Points: Left center of EACH item in Col 2 (or just the active one? The screenshot shows lines to ALL items in Col 2).
+   Wait, screenshot:
+   "All" connects to "AI/ML", "BizOps", "Engineering"...
+   "AI/ML" connects to "Neural Diversity...", "The Part of Scaling..."
+
+   So:
+   Active Parent -> Connects to ALL visible Children.
+
+   Yes.
+
+   So:
+   1. Get Active Item Col 1 (A1).
+   2. Get All Items Col 2.
+   3. Draw curve from A1 to Col 2 Item 1.
+   4. Draw curve from A1 to Col 2 Item 2...
+
+   The curve style in `image.png`:
+   Horizontal line from A1.
+   Vertical line down.
+   Horizontal branches to Col 2 Items.
+   Rounded corners.
+
+   It looks like a single "Fork".
+
+   Source ----+
+              |
+              +---- Dest 1
+              |
+              +---- Dest 2
+
+   Implementation:
+   SVG `path` is perfect for this.
+
+   Let's adjust `style.css` to just handle layout and basic styling.
+   `script.js` will handle the "Tree Lines".
+
+*/
+
+/* Reset & Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    background-color: #FFFFFF;
+    color: #000000;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+ul {
+    list-style: none;
+}
+
+a {
+    text-decoration: none;
+    color: #000000;
+    display: inline-block;
+    cursor: pointer;
+    padding: 4px 8px; /* Background padding */
+    transition: background-color 0.2s;
+    position: relative; /* For z-index if needed */
+    z-index: 2;
+}
+
+/* Header */
+.site-header {
+    padding: 30px 40px 10px 40px;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.site-header h1 {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* The long black line under header */
+.site-header::after {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: #000;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+}
+
+/* The dot on the line */
+.site-header::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    background: #000;
+    border-radius: 50%;
+    position: absolute;
+    left: 40px; /* Aligned with text */
+    bottom: -2px; /* Centered on line */
+    z-index: 2;
+}
+
+/* Grid Layout */
+.grid-container {
+    display: grid;
+    grid-template-columns: 250px 250px 1fr; /* Fixed widths */
+    padding: 0 40px;
+    position: relative; /* Context for SVG */
+    min-height: 80vh;
+}
+
+/* SVG Overlay */
+#connections-layer {
+    position: absolute;
     top: 0;
-    height: 100vh;
-    overflow-y: auto;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1; /* Behind text */
 }
 
-/* Navigation & Filters */
-.nav-column li, .filter-column li {
-    margin-bottom: 8px;
+/* Column Headers */
+.column-header {
+    font-size: 12px;
+    font-weight: normal;
+    color: #000;
+    margin-bottom: 25px;
+    padding-left: 0;
 }
 
-.nav-link, .tag-link {
-    transition: color 0.2s ease;
+/* List Items */
+.tree-list li, .project-item {
+    margin-bottom: 15px; /* Spacing between items */
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    z-index: 2;
+}
+
+.num {
+    font-size: 11px;
+    color: #999;
+    width: 25px;
+    margin-right: 5px;
+    display: inline-block;
+}
+
+/* Active State */
+.nav-link.active, .tag-link.active {
+    background-color: #E0E0E0; /* Grey background */
 }
 
 /* Project List */
 .project-item {
     display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid transparent; /* To keep size consistent if we add border later */
+    align-items: baseline;
 }
 
 .project-title {
     font-weight: normal;
+    font-size: 15px; /* Slightly larger like screenshot */
+}
+
+.project-content {
+    display: flex;
+    flex-direction: column;
 }
 
 .project-meta {
-    text-align: right;
-    color: #000;
+    display: none; /* Screenshot doesn't show dates/tech clearly, focusing on Title */
+    /* Or maybe keep it subtle */
 }
 
-/* Hover Effects */
-.project-item:hover .project-title {
-    text-decoration: underline;
-    /* or turn grey as per prompt suggestion: "subtle underline or turn grey" */
-    /* color: #666; */
-    text-decoration-color: #000;
-    text-decoration-thickness: 1px;
-}
-
-/* Active states for filters (optional visual cue) */
-.active {
-    font-weight: bold;
-}
-
-/* Responsiveness */
+/* Responsive */
 @media (max-width: 768px) {
     .grid-container {
-        display: block; /* Collapse to single column */
+        display: block;
+        padding: 20px;
     }
 
-    .column {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid #E5E5E5;
-        height: auto;
-        position: static; /* Remove sticky */
-        padding: 15px;
+    #connections-layer {
+        display: none; /* Hide lines on mobile */
     }
 
-    .nav-column ul, .filter-column ul {
-        display: flex;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        gap: 15px;
-        padding-bottom: 5px; /* For scrollbar space */
+    .column-header {
+        margin-top: 20px;
     }
 
-    /* Hide scrollbar for cleaner look on mobile */
-    .nav-column ul::-webkit-scrollbar, .filter-column ul::-webkit-scrollbar {
-        display: none;
-    }
-    .nav-column ul, .filter-column ul {
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
-    }
-
-    .nav-column li, .filter-column li {
-        margin-bottom: 0;
-        white-space: nowrap;
+    .tree-list {
+        margin-bottom: 20px;
     }
 }

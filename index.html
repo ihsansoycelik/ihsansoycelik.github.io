@@ -7,29 +7,37 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <header class="site-header">
+        <h1>minus one</h1>
+    </header>
+
     <div class="grid-container">
         <!-- Column 1: Main Navigation -->
         <nav class="column nav-column">
-            <ul>
-                <li><a href="#" class="nav-link active" data-filter="all">All</a></li>
-                <li><a href="#" class="nav-link" data-category="sketches">Sketches</a></li>
-                <li><a href="#" class="nav-link" data-category="simulations">Simulations</a></li>
+            <h2 class="column-header">Type</h2>
+            <ul class="tree-list" id="type-list">
+                <li><span class="num">01</span> <a href="#" class="nav-link active" data-filter="all">All</a></li>
+                <li><span class="num">02</span> <a href="#" class="nav-link" data-category="sketches">Sketches</a></li>
+                <li><span class="num">03</span> <a href="#" class="nav-link" data-category="simulations">Simulations</a></li>
             </ul>
         </nav>
 
         <!-- Column 2: Specific Tags/Topics -->
         <aside class="column filter-column">
-            <ul>
-                <li><a href="#" class="tag-link" data-tag="Generative">Generative</a></li>
-                <li><a href="#" class="tag-link" data-tag="Physics">Physics</a></li>
-                <li><a href="#" class="tag-link" data-tag="Noise">Noise</a></li>
-                <li><a href="#" class="tag-link" data-tag="Interaction">Interaction</a></li>
+            <h2 class="column-header">Topic</h2>
+            <ul class="tree-list" id="topic-list">
+                <li><span class="num">01</span> <a href="#" class="tag-link active" data-tag="all">All</a></li>
+                <li><span class="num">02</span> <a href="#" class="tag-link" data-tag="Generative">Generative</a></li>
+                <li><span class="num">03</span> <a href="#" class="tag-link" data-tag="Physics">Physics</a></li>
+                <li><span class="num">04</span> <a href="#" class="tag-link" data-tag="Noise">Noise</a></li>
+                <li><span class="num">05</span> <a href="#" class="tag-link" data-tag="Interaction">Interaction</a></li>
             </ul>
         </aside>
 
         <!-- Column 3: Project List -->
         <main class="column project-column">
-            <div id="project-list">
+            <h2 class="column-header">Articles</h2>
+            <div id="project-list" class="tree-list">
                 <!-- Projects will be injected here -->
             </div>
         </main>
