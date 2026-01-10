@@ -2,6 +2,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Data Management: Constant array of projects
     const projects = [
         {
+            title: "Liquid Lens / Refraction",
+            tag: "Shaders",
+            category: "sketches",
+            url: "./liquid-lens/index.html",
+            date: "2023-10-27",
+            author: "Me",
+            tech: "p5.js + GLSL"
+        },
+        {
             title: "Neural Diversity Regularizes Hallucinations in Small Models",
             tag: "AI / ML",
             category: "all",
