@@ -2,6 +2,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Data Management: Constant array of projects
     const projects = [
         {
+            title: "Flexible Poster (Kinetic Typography)",
+            tag: "Interaction",
+            category: "sketches",
+            url: "/flexible-poster/",
+            date: "2023-11-01",
+            author: "Me",
+            tech: "p5.js"
+        },
+        {
             title: "Neural Diversity Regularizes Hallucinations in Small Models",
             tag: "AI / ML",
             category: "all",
