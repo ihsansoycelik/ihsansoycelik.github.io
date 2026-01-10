@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquid Lens Distortion</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <div id="controls">
+        <div class="control-group">
+            <label for="text-input">Text</label>
+            <input type="text" id="text-input" value="DEFORM">
+        </div>
+        <div class="control-group">
+            <label for="radius-slider">Radius</label>
+            <input type="range" id="radius-slider" min="100" max="500" value="250">
+        </div>
+        <div class="control-group">
+            <label for="strength-slider">Strength</label>
+            <input type="range" id="strength-slider" min="0" max="1" step="0.01" value="0.5">
+        </div>
+        <div class="control-group">
+            <label for="fontsize-slider">Font Size</label>
+            <input type="range" id="fontsize-slider" min="50" max="300" value="150">
+        </div>
+        <div class="control-group">
+            <label for="bg-color">Bg Color</label>
+            <input type="color" id="bg-color" value="#FFFFFF">
+        </div>
+        <div class="control-group">
+            <label for="text-color">Text Color</label>
+            <input type="color" id="text-color" value="#000000">
+        </div>
+    </div>
+
+    <!-- GLSL Fragment Shader -->
+    <script id="liquid-shader" type="x-shader/x-fragment">
+        precision highp float;
+
+        // Uniforms passed from p5.js
+        uniform sampler2D uTexture;
+        uniform vec2 uResolution;
+        uniform vec2 uMouse;
+        uniform float uRadius;
+        uniform float uStrength;
+
+        // Texture coordinates passed from vertex shader (p5 handles this)
+        varying vec2 vTexCoord;
+
+        void main() {
+            // Normalized pixel coordinates (0.0 to 1.0)
+            vec2 st = vTexCoord;
+
+            // Correct for aspect ratio if needed, but here we work in texture space
+            // However, uMouse is likely in pixels, so let's convert st to pixels or mouse to UV
+
+            // Map uMouse to UV space (0.0 to 1.0)
+            // p5 WebGL mode uMouse is usually pixels from top-left or center.
+            // We will assume uMouse is passed as normalized UV coordinates (0 to 1) for simplicity in shader
+
+            vec2 mouseUV = uMouse;
+
+            // Calculate aspect ratio to ensure circular distortion
+            float aspect = uResolution.x / uResolution.y;
+            vec2 aspectCorrection = vec2(aspect, 1.0);
+
+            // Calculate distance from current pixel to mouse
+            // We multiply by aspectCorrection to make the distance circular, not elliptical
+            float dist = distance(st * aspectCorrection, mouseUV * aspectCorrection);
+
+            // Calculate radius in UV space (approx) - uRadius is pixels, so we normalize it by height
+            float radiusUV = uRadius / uResolution.y;
+
+            if (dist < radiusUV) {
+                // Calculate distortion amount based on distance
+                // 1.0 at center, 0.0 at edge of radius
+                float falloff = smoothstep(radiusUV, 0.0, dist);
+
+                // Non-linear displacement (bulge effect)
+                // We want to pull pixels? Or push?
+                // Lens effect usually magnifies, so we sample closer to center?
+                // Or "pinch" which pushes away?
+                // The prompt says "bulge or pinch".
+                // "Magnifying glass" implies zooming in, which means we sample from a smaller area and spread it out.
+                // So we need to shift the sampling coordinate *towards* the mouse center.
+
+                vec2 dir = st - mouseUV;
+
+                // Apply distortion
+                // We modify the coordinate we sample from
+                // For magnification: sample closer to center
+                // st = mouseUV + dir * factor
+                // factor < 1.0 means zoom in
+
+                // Let's use uStrength to control how much we zoom
+                // Simple bulge:
+                float distortion = pow(falloff, 2.0) * uStrength;
+
+                // Offset the texture coordinate towards the mouse center
+                st -= dir * distortion;
+            }
+
+            // Sample the texture at the modified coordinate
+            vec4 color = texture2D(uTexture, st);
+
+            gl_FragColor = color;
+        }
+    </script>
+
+    <script src="sketch.js"></script>
+</body>
+</html>
