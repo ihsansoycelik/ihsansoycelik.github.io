@@ -91,13 +91,13 @@ document.addEventListener('DOMContentLoaded', () => {
             titleSpan.className = 'project-title';
             titleSpan.textContent = project.title;
 
-            // Meta (Hidden mostly)
-            const metaSpan = document.createElement('span');
-            metaSpan.className = 'project-meta';
-            metaSpan.textContent = `${project.date} / ${project.tech}`;
+            // Meta (Removed as per request)
+            // const metaSpan = document.createElement('span');
+            // metaSpan.className = 'project-meta';
+            // metaSpan.textContent = `${project.date} / ${project.tech}`;
 
             link.appendChild(titleSpan);
-            link.appendChild(metaSpan);
+            // link.appendChild(metaSpan);
 
             projectItem.appendChild(numSpan);
             projectItem.appendChild(link);
@@ -168,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Vertical Spine X Position
         const vx = minX - 20;
+        const r = 15; // Increased Radius for softer curves
 
         // Combine Source and Children into a list of "Vertical Events"
         const events = [
@@ -181,25 +182,93 @@ document.addEventListener('DOMContentLoaded', () => {
         const minY = events[0].y;
         const maxY = events[events.length - 1].y;
 
-        let d = "";
+        // Alignment Fix: Check if source and single dest are close in Y
+        const isSingle = (events.length === 2 && Math.abs(events[0].y - events[1].y) < 5);
+        if (isSingle) {
+            // Force flat line
+             const commonY = events[0].y;
+             const sourceX = events.find(e => e.type === 'source').x;
+             const childX = events.find(e => e.type === 'child').x;
 
-        // 1. Draw Vertical Spine (Square corners = full length)
-        if (maxY - minY > 0) {
-             d += `M ${vx} ${minY} L ${vx} ${maxY} `;
+             const d = `M ${sourceX} ${commonY} L ${childX} ${commonY}`;
+
+             const path = document.createElementNS(svgNS, "path");
+             path.setAttribute("d", d);
+             path.setAttribute("stroke", "black");
+             path.setAttribute("stroke-width", "2");
+             path.setAttribute("fill", "none");
+             svgLayer.appendChild(path);
+             return;
         }
 
-        // 2. Process each event to connect to spine
+        let d = "";
+
+        // 1. Draw Vertical Spine with rounded ends
+        // But actually the spine connects horizontal arms.
+        // It's not just a vertical line. It's segments between arms.
+
+        // We draw:
+        // Source arm -> curve -> spine -> curve -> child arm.
+
+        // Find Source Index in sorted events
+        const sourceIndex = events.findIndex(e => e.type === 'source');
+        const sourceEvent = events[sourceIndex];
+
+        // Connect Source to Spine
+        // If source is somewhere in middle, it joins the spine.
+        // If source is at top/bottom, it starts/ends the spine?
+        // Actually, the structure is a fork.
+        // Source connects to Vx.
+        // Spine runs from MinY to MaxY (covering all children + source).
+
+        // Let's iterate segments.
+        // We need to know if we are at the top or bottom of the spine to draw corners.
+
+        const spineTop = minY + r;
+        const spineBottom = maxY - r;
+
+        // Draw Vertical Line (if space exists)
+        if (spineBottom >= spineTop) {
+            d += `M ${vx} ${spineTop} L ${vx} ${spineBottom} `;
+        }
+
+        // Process Connections
         events.forEach(ev => {
-            const isSingle = (minY === maxY);
+            const isTop = (ev.y === minY);
+            const isBottom = (ev.y === maxY);
+            const isMiddle = !isTop && !isBottom;
 
             if (ev.type === 'source') {
-                // Connect Source (Left) to Spine (Right)
-                // Square Corner: Just horizontal line to vx
-                d += `M ${ev.x} ${ev.y} L ${vx} ${ev.y} `;
+                // Source (Left) -> Spine (Right)
+                // If Top: Line from left, Curve Down
+                if (isTop) {
+                    d += `M ${ev.x} ${ev.y} L ${vx - r} ${ev.y} Q ${vx} ${ev.y} ${vx} ${ev.y + r} `;
+                }
+                // If Bottom: Line from left, Curve Up
+                else if (isBottom) {
+                    d += `M ${ev.x} ${ev.y} L ${vx - r} ${ev.y} Q ${vx} ${ev.y} ${vx} ${ev.y - r} `;
+                }
+                // Middle: Just Straight Line (T-junction? No, usually forks don't T-junction from side. But here Source enters spine.)
+                // "All" -> Spine.
+                // If "All" is in middle (unlikely for Source, usually Source is one, Children many).
+                // But if Source Y is between Child Ys...
+                else {
+                    d += `M ${ev.x} ${ev.y} L ${vx} ${ev.y} `;
+                }
             } else {
-                // Connect Spine (Left) to Child (Right)
-                // Square Corner: Just horizontal line from vx
-                d += `M ${vx} ${ev.y} L ${ev.x} ${ev.y} `;
+                // Spine (Left) -> Child (Right)
+                // If Top: Curve from Down -> Right
+                if (isTop) {
+                    d += `M ${vx} ${ev.y + r} Q ${vx} ${ev.y} ${vx + r} ${ev.y} L ${ev.x} ${ev.y} `;
+                }
+                // If Bottom: Curve from Up -> Right
+                else if (isBottom) {
+                    d += `M ${vx} ${ev.y - r} Q ${vx} ${ev.y} ${vx + r} ${ev.y} L ${ev.x} ${ev.y} `;
+                }
+                // Middle: Straight Line from Spine
+                else {
+                    d += `M ${vx} ${ev.y} L ${ev.x} ${ev.y} `;
+                }
             }
         });
 
