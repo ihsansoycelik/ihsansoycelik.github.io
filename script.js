@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
             title: "Kinetic-Poster-1",
             tag: "Generative",
             category: "Posters",
-            url: "kinetic-poster-1/index.html#",
+            url: "kinetic-poster-1/index.html",
             date: "2023-09-22",
             author: "Me",
             tech: "p5.js"
@@ -32,26 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
             title: "Interactive-Graffiti-1",
             tag: "Generative",
             category: "Posters",
-            url: "Interactive-Graffiti-1/index.html",
+            url: "Interactive-graffiti-1/index.html",
             date: "2023-07-12",
-            author: "Me",
-            tech: "p5.js"
-        },
-        {
-            title: "Null",
-            tag: "Interaction",
-            category: "simulations",
-            url: "#",
-            date: "2023-06-30",
-            author: "Me",
-            tech: "p5.js"
-        },
-        {
-            title: "Null",
-            tag: "AI / ML",
-            category: "all",
-            url: "#",
-            date: "2023-06-30",
             author: "Me",
             tech: "p5.js"
         }
@@ -233,6 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
             path.setAttribute("stroke", "black");
             path.setAttribute("stroke-width", "1");
             path.setAttribute("fill", "none");
+            path.classList.add('connection-line');
             svgLayer.appendChild(path);
             return;
         }
@@ -313,6 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
         path.setAttribute("stroke", "black");
         path.setAttribute("stroke-width", "1");
         path.setAttribute("fill", "none");
+        path.classList.add('connection-line');
         svgLayer.appendChild(path);
     }
 
