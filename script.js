@@ -171,94 +171,96 @@ document.addEventListener('DOMContentLoaded', () => {
         const containerRect = gridContainer.getBoundingClientRect();
         const sourceRect = sourceEl.getBoundingClientRect();
 
-        // Source point: right edge, vertical center
-        const x1 = sourceRect.right - containerRect.left;
-        const y1 = sourceRect.top + sourceRect.height / 2 - containerRect.top;
+        // Source: right edge center
+        const sx = sourceRect.right - containerRect.left;
+        const sy = sourceRect.top + sourceRect.height / 2 - containerRect.top;
 
-        // Collect all destination points
-        const destPoints = [];
-        let minDestX = Infinity;
-
+        // Destinations
+        const dests = [];
+        let minX = Infinity;
         destNodeList.forEach(dest => {
-            const targetRect = dest.getBoundingClientRect();
-            const dx = targetRect.left - containerRect.left - 8;
-            const dy = targetRect.top + targetRect.height / 2 - containerRect.top;
-            destPoints.push({ x: dx, y: dy });
-            if (dx < minDestX) minDestX = dx;
+            const r = dest.getBoundingClientRect();
+            const x = r.left - containerRect.left - 5;
+            const y = r.top + r.height / 2 - containerRect.top;
+            dests.push({ x, y });
+            if (x < minX) minX = x;
         });
 
-        if (destPoints.length === 0) return;
+        if (dests.length === 0) return;
+        dests.sort((a, b) => a.y - b.y);
 
-        // Sort by Y position
-        destPoints.sort((a, b) => a.y - b.y);
+        // Spine X: 20px after source
+        const spineX = sx + 20;
+        const r = 8; // corner radius
 
-        // Calculate spine X position: midway between source right edge and leftmost destination
-        const spineX = x1 + (minDestX - x1) / 2;
-        const radius = 10; // Corner radius
-
-        const firstY = destPoints[0].y;
-        const lastY = destPoints[destPoints.length - 1].y;
-
+        // Path string
         let d = "";
 
-        // Source connects to spine
-        if (destPoints.length === 1 && Math.abs(y1 - firstY) < 5) {
-            // Single destination at same height: straight horizontal line
-            d = `M ${x1} ${y1} L ${destPoints[0].x} ${destPoints[0].y}`;
-        } else {
-            // Multiple destinations or different heights
-
-            // Determine if source is above, below, or between destinations
-            const sourceAboveAll = y1 <= firstY;
-            const sourceBelowAll = y1 >= lastY;
-
-            if (sourceAboveAll) {
-                // Source is at top: horizontal then curve down
-                d += `M ${x1} ${y1} L ${spineX - radius} ${y1} `;
-                d += `Q ${spineX} ${y1} ${spineX} ${y1 + radius} `;
-                // Spine down to last destination
-                if (lastY - radius > y1 + radius) {
-                    d += `L ${spineX} ${lastY - radius} `;
-                }
-            } else if (sourceBelowAll) {
-                // Source is at bottom: horizontal then curve up
-                d += `M ${x1} ${y1} L ${spineX - radius} ${y1} `;
-                d += `Q ${spineX} ${y1} ${spineX} ${y1 - radius} `;
-                // Spine up to first destination
-                if (y1 - radius > firstY + radius) {
-                    d += `L ${spineX} ${firstY + radius} `;
-                }
+        // Single destination - just a straight/curved line
+        if (dests.length === 1) {
+            const dest = dests[0];
+            if (Math.abs(sy - dest.y) < 3) {
+                // Same height - straight line
+                d = `M ${sx} ${sy} L ${dest.x} ${dest.y}`;
             } else {
-                // Source is in the middle: T-junction
-                d += `M ${x1} ${y1} L ${spineX} ${y1} `;
-                // Spine goes both up and down from source Y
-                d += `M ${spineX} ${firstY} L ${spineX} ${lastY} `;
+                // Different height - go to spine, curve, then to dest
+                const dir = dest.y > sy ? 1 : -1;
+                d = `M ${sx} ${sy} L ${spineX - r} ${sy} `;
+                d += `Q ${spineX} ${sy} ${spineX} ${sy + dir * r} `;
+                d += `L ${spineX} ${dest.y - dir * r} `;
+                d += `Q ${spineX} ${dest.y} ${spineX + r} ${dest.y} `;
+                d += `L ${dest.x} ${dest.y}`;
+            }
+        } else {
+            // Multiple destinations
+            const topY = dests[0].y;
+            const botY = dests[dests.length - 1].y;
+
+            // Source connects to spine
+            d = `M ${sx} ${sy} L ${spineX - r} ${sy} `;
+
+            // Curve from horizontal to vertical
+            if (sy <= topY) {
+                // Source at or above top - curve down
+                d += `Q ${spineX} ${sy} ${spineX} ${sy + r} `;
+                d += `L ${spineX} ${botY - r} `;
+            } else if (sy >= botY) {
+                // Source at or below bottom - curve up
+                d += `Q ${spineX} ${sy} ${spineX} ${sy - r} `;
+                d += `L ${spineX} ${topY + r} `;
+            } else {
+                // Source in middle - T junction
+                d += `L ${spineX} ${sy} `;
+                // Draw spine separately
+                d += `M ${spineX} ${topY} L ${spineX} ${botY} `;
             }
 
-            // Draw branches to each destination
-            destPoints.forEach((pt, i) => {
-                const isFirst = (i === 0);
-                const isLast = (i === destPoints.length - 1);
+            // Branches to each destination
+            dests.forEach((dest, i) => {
+                const isTop = (i === 0);
+                const isBot = (i === dests.length - 1);
 
-                if (sourceAboveAll) {
-                    if (isLast) {
-                        // Last destination: curve right
-                        d += `Q ${spineX} ${pt.y} ${spineX + radius} ${pt.y} L ${pt.x} ${pt.y} `;
+                if (sy <= topY) {
+                    // Source above: top is straight from source curve, others branch
+                    if (isBot) {
+                        // Bottom: continue with curve
+                        d += `Q ${spineX} ${dest.y} ${spineX + r} ${dest.y} L ${dest.x} ${dest.y} `;
                     } else {
-                        // Middle destinations: T-junction
-                        d += `M ${spineX} ${pt.y} L ${pt.x} ${pt.y} `;
+                        // Not bottom: branch from spine
+                        d += `M ${spineX} ${dest.y} L ${dest.x} ${dest.y} `;
                     }
-                } else if (sourceBelowAll) {
-                    if (isFirst) {
-                        // First destination: curve right
-                        d += `Q ${spineX} ${pt.y} ${spineX + radius} ${pt.y} L ${pt.x} ${pt.y} `;
+                } else if (sy >= botY) {
+                    // Source below: bottom is straight from source curve, others branch
+                    if (isTop) {
+                        // Top: continue with curve
+                        d += `Q ${spineX} ${dest.y} ${spineX + r} ${dest.y} L ${dest.x} ${dest.y} `;
                     } else {
-                        // Middle destinations: T-junction
-                        d += `M ${spineX} ${pt.y} L ${pt.x} ${pt.y} `;
+                        // Not top: branch from spine
+                        d += `M ${spineX} ${dest.y} L ${dest.x} ${dest.y} `;
                     }
                 } else {
-                    // Source in middle: all branches are horizontal
-                    d += `M ${spineX} ${pt.y} L ${pt.x} ${pt.y} `;
+                    // Source in middle: all are branches
+                    d += `M ${spineX} ${dest.y} L ${dest.x} ${dest.y} `;
                 }
             });
         }
