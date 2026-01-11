@@ -385,7 +385,7 @@ function setupSidebar(sidebar) {
   let gradContent = createSection('Gradient Maps', sidebar, false);
   let gradToggleRow = createDiv().class('toggle-row').parent(gradContent);
   createSpan('Enabled').class('toggle-label').parent(gradToggleRow);
-  let gradSwitch = createLabel().class('switch').parent(gradToggleRow);
+  let gradSwitch = createElement('label').class('switch').parent(gradToggleRow);
   let gradInput = createCheckbox('', params.useGradient).parent(gradSwitch);
   gradInput.changed(() => params.useGradient = gradInput.checked());
   createSpan().class('slider').parent(gradSwitch);
@@ -415,7 +415,7 @@ function setupSidebar(sidebar) {
   let noiseContent = createSection('Grain Noise', sidebar, false);
   let noiseToggleRow = createDiv().class('toggle-row').parent(noiseContent);
   createSpan('Enabled').class('toggle-label').parent(noiseToggleRow);
-  let noiseSwitch = createLabel().class('switch').parent(noiseToggleRow);
+  let noiseSwitch = createElement('label').class('switch').parent(noiseToggleRow);
   let noiseInput = createCheckbox('', params.useNoise).parent(noiseSwitch);
   noiseInput.changed(() => params.useNoise = noiseInput.checked());
   createSpan().class('slider').parent(noiseSwitch);
