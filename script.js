@@ -171,99 +171,46 @@ document.addEventListener('DOMContentLoaded', () => {
         const containerRect = gridContainer.getBoundingClientRect();
         const sourceRect = sourceEl.getBoundingClientRect();
 
-        // Source: right edge center
+        // Source: right edge, vertical center
         const sx = sourceRect.right - containerRect.left;
         const sy = sourceRect.top + sourceRect.height / 2 - containerRect.top;
 
-        // Destinations
+        // Find leftmost destination X to position spine
+        let minDestX = Infinity;
         const dests = [];
-        let minX = Infinity;
+
         destNodeList.forEach(dest => {
             const r = dest.getBoundingClientRect();
-            const x = r.left - containerRect.left - 5;
+            const x = r.left - containerRect.left;
             const y = r.top + r.height / 2 - containerRect.top;
-            dests.push({ x, y });
-            if (x < minX) minX = x;
+            dests.push({ x, y, el: dest });
+            if (x < minDestX) minDestX = x;
         });
 
         if (dests.length === 0) return;
         dests.sort((a, b) => a.y - b.y);
 
-        // Spine X: 20px after source
-        const spineX = sx + 20;
-        const r = 8; // corner radius
+        const topY = dests[0].y;
+        const botY = dests[dests.length - 1].y;
 
-        // Path string
+        // Spine positioned 15px before destination text
+        const spineX = minDestX - 15;
+
+        // Corner radius
+        const r = 6;
+
         let d = "";
 
-        // Single destination - just a straight/curved line
-        if (dests.length === 1) {
-            const dest = dests[0];
-            if (Math.abs(sy - dest.y) < 3) {
-                // Same height - straight line
-                d = `M ${sx} ${sy} L ${dest.x} ${dest.y}`;
-            } else {
-                // Different height - go to spine, curve, then to dest
-                const dir = dest.y > sy ? 1 : -1;
-                d = `M ${sx} ${sy} L ${spineX - r} ${sy} `;
-                d += `Q ${spineX} ${sy} ${spineX} ${sy + dir * r} `;
-                d += `L ${spineX} ${dest.y - dir * r} `;
-                d += `Q ${spineX} ${dest.y} ${spineX + r} ${dest.y} `;
-                d += `L ${dest.x} ${dest.y}`;
-            }
-        } else {
-            // Multiple destinations
-            const topY = dests[0].y;
-            const botY = dests[dests.length - 1].y;
+        // Source to spine horizontal line
+        d += `M ${sx} ${sy} L ${spineX} ${sy} `;
 
-            // Source connects to spine
-            d = `M ${sx} ${sy} L ${spineX - r} ${sy} `;
+        // Vertical spine from top destination to bottom destination
+        d += `M ${spineX} ${topY} L ${spineX} ${botY} `;
 
-            // Curve from horizontal to vertical
-            if (sy <= topY) {
-                // Source at or above top - curve down
-                d += `Q ${spineX} ${sy} ${spineX} ${sy + r} `;
-                d += `L ${spineX} ${botY - r} `;
-            } else if (sy >= botY) {
-                // Source at or below bottom - curve up
-                d += `Q ${spineX} ${sy} ${spineX} ${sy - r} `;
-                d += `L ${spineX} ${topY + r} `;
-            } else {
-                // Source in middle - T junction
-                d += `L ${spineX} ${sy} `;
-                // Draw spine separately
-                d += `M ${spineX} ${topY} L ${spineX} ${botY} `;
-            }
-
-            // Branches to each destination
-            dests.forEach((dest, i) => {
-                const isTop = (i === 0);
-                const isBot = (i === dests.length - 1);
-
-                if (sy <= topY) {
-                    // Source above: top is straight from source curve, others branch
-                    if (isBot) {
-                        // Bottom: continue with curve
-                        d += `Q ${spineX} ${dest.y} ${spineX + r} ${dest.y} L ${dest.x} ${dest.y} `;
-                    } else {
-                        // Not bottom: branch from spine
-                        d += `M ${spineX} ${dest.y} L ${dest.x} ${dest.y} `;
-                    }
-                } else if (sy >= botY) {
-                    // Source below: bottom is straight from source curve, others branch
-                    if (isTop) {
-                        // Top: continue with curve
-                        d += `Q ${spineX} ${dest.y} ${spineX + r} ${dest.y} L ${dest.x} ${dest.y} `;
-                    } else {
-                        // Not top: branch from spine
-                        d += `M ${spineX} ${dest.y} L ${dest.x} ${dest.y} `;
-                    }
-                } else {
-                    // Source in middle: all are branches
-                    d += `M ${spineX} ${dest.y} L ${dest.x} ${dest.y} `;
-                }
-            });
-        }
+        // Horizontal branches from spine to each destination
+        dests.forEach(dest => {
+            d += `M ${spineX} ${dest.y} L ${dest.x - 5} ${dest.y} `;
+        });
 
         const path = document.createElementNS(svgNS, "path");
         path.setAttribute("d", d);
