@@ -594,35 +594,7 @@ function draw() {
 }
 
 function drawUI() {
-  noStroke();
-  fill(params.textColor);
-  textSize(12);
-  textFont('Arial'); 
-  textAlign(LEFT, TOP);
-  
-  text("NIGHT BOAT TO CAIRO BY MADNESS.", 20, 20);
-  text("@holke79", 20, height - 30);
-  
-  push();
-  translate(width - 40, 40);
-  noFill();
-  stroke(params.textColor);
-  strokeWeight(1);
-  ellipse(0, 0, 50, 50);
-  fill(params.textColor);
-  noStroke();
-  textAlign(CENTER, CENTER);
-  textSize(16);
-  text("79", 0, 1);
-  pop();
-  
-  push();
-  translate(width - 20, height / 2);
-  rotate(HALF_PI);
-  textAlign(CENTER, CENTER);
-  textSize(10);
-  text("HERE COMES THE BOAT, ONLY HALF-AFLOAT.", 0, 0);
-  pop();
+  // UI text removed as per request
 }
 
 function saveLoop() {
