@@ -6,6 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portfolio</title>
     <link rel="stylesheet" href="style.css">
+
+    <!-- Optimization: Preconnect to CDN -->
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+    <!-- Optimization: Preload p5.js library used by projects -->
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js" as="script">
 </head>
 
 <body>
@@ -89,6 +95,9 @@
             </aside>
         </div>
     </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="spinner"></div>
 
     <!-- Project Viewer Section -->
     <div id="project-viewer">

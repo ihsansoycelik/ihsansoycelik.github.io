@@ -96,11 +96,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 const url = project.url;
 
                 if (url && url !== '#' && url !== '') {
-                    projectFrame.src = url;
-                    projectFrame.style.display = 'block';
+                    // Show Spinner, Hide Frame initially
+                    const spinner = document.getElementById('loading-spinner');
+                    spinner.style.display = 'block';
+                    projectFrame.style.display = 'none'; // Hide until loaded for cleaner effect
 
-                    // Smooth scroll to the iframe
-                    projectFrame.scrollIntoView({ behavior: 'smooth' });
+                    projectFrame.src = url;
+
+                    // Smooth scroll to the iframe container (viewer) instead of the frame
+                    projectViewer.scrollIntoView({ behavior: 'smooth' });
+
+                    // Hide Spinner on Load
+                    projectFrame.onload = () => {
+                        spinner.style.display = 'none';
+                        projectFrame.style.display = 'block';
+                    };
                 }
             });
 
@@ -153,143 +163,263 @@ document.addEventListener('DOMContentLoaded', () => {
         const visibleProjects = document.querySelectorAll('.project-link');
 
         if (activeTag && visibleProjects.length > 0) {
-            drawFork(activeTag, visibleProjects);
+            drawFork(activeTag, visibleProjects, 2);
         }
     }
 
-    function drawFork(sourceEl, destNodeList) {
+    function drawFork(sourceEl, destNodeList, colIndex) {
         const containerRect = gridContainer.getBoundingClientRect();
         const sourceRect = sourceEl.getBoundingClientRect();
 
         // Source Point: Right Middle
-        const x1 = sourceRect.right - containerRect.left;
-        const y1 = sourceRect.top + sourceRect.height / 2 - containerRect.top;
+        const sourceX = sourceRect.right - containerRect.left;
+        const sourceY = sourceRect.top + sourceRect.height / 2 - containerRect.top;
 
-        // Collect Destination Points
-        const destPoints = [];
-        let minX = Infinity;
+        // Determine Fixed Spine X based on column index
+        // Grid padding is 40px. Columns are 250px.
+        // Col 1 ends at 40 + 250 = 290.
+        // Col 2 ends at 40 + 500 = 540.
+        // We put the spine slightly before the next column starts to give a "margin".
+        let vx;
+        if (colIndex === 1) {
+            vx = 40 + 250 - 20; // 270px
+        } else {
+            // Col 2 -> Col 3
+            vx = 40 + 250 + 250 - 20; // 520px
+        }
 
+        const r = 12; // Corner Radius
+
+        // Collect Destinations
+        const destinations = [];
         destNodeList.forEach(dest => {
             const li = dest.closest('li') || dest.closest('.project-item');
-            const num = li.querySelector('.num');
-            const targetEl = num || dest;
-
+            const targetEl = dest; // Use the link itself for precision
             const targetRect = targetEl.getBoundingClientRect();
 
-            // Destination Point: Left Middle
-            const dx = targetRect.left - containerRect.left - 10;
             const dy = targetRect.top + targetRect.height / 2 - containerRect.top;
 
-            destPoints.push({ x: dx, y: dy, type: 'child' });
-            if (dx < minX) minX = dx;
+            // For the child, we want the line to enter from the left.
+            // Child starts at column start. 
+            // We can calculate strict entry X or use the element's left.
+            // Let's use the element's left minus a small gap.
+            const dx = targetRect.left - containerRect.left - 10;
+
+            destinations.push({ x: dx, y: dy });
         });
 
-        // Vertical Spine X Position
-        const vx = minX - 20;
-        const r = 15; // Increased Radius for softer curves
+        // Sort destinations by Y
+        destinations.sort((a, b) => a.y - b.y);
 
-        // Combine Source and Children into a list of "Vertical Events"
-        const events = [
-            { y: y1, type: 'source', x: x1 },
-            ...destPoints
-        ];
+        if (destinations.length === 0) return;
 
-        // Sort by Y
-        events.sort((a, b) => a.y - b.y);
+        const minY = destinations[0].y;
+        const maxY = destinations[destinations.length - 1].y;
 
-        const minY = events[0].y;
-        const maxY = events[events.length - 1].y;
-
-        // Alignment Fix: Check if source and single dest are close in Y
-        const isSingle = (events.length === 2 && Math.abs(events[0].y - events[1].y) < 5);
-        if (isSingle) {
-            // Force flat line
-            const commonY = events[0].y;
-            const sourceX = events.find(e => e.type === 'source').x;
-            const childX = events.find(e => e.type === 'child').x;
-
-            const d = `M ${sourceX} ${commonY} L ${childX} ${commonY}`;
-
-            const path = document.createElementNS(svgNS, "path");
-            path.setAttribute("d", d);
-            path.setAttribute("stroke", "black");
-            path.setAttribute("stroke-width", "1");
-            path.setAttribute("fill", "none");
-            path.classList.add('connection-line');
-            svgLayer.appendChild(path);
-            return;
-        }
-
+        // Path Construction
         let d = "";
 
-        // 1. Draw Vertical Spine with rounded ends
-        // But actually the spine connects horizontal arms.
-        // It's not just a vertical line. It's segments between arms.
+        // 1. Draw Vertical Spine
+        // The spine runs from the topmost child connection to the bottommost.
+        // But we also need to connect to the source Y.
+        // So the spine range is [min(sourceY, firstChildY), max(sourceY, lastChildY)]?
+        // NO. The standard tree look is:
+        // Source -> Horizontal -> Vertical Spine.
+        // Children -> Horizontal -> Vertical Spine.
+        // The Vertical Spine connects the Source's entry point to the Children's branching points.
 
-        // We draw:
-        // Source arm -> curve -> spine -> curve -> child arm.
+        // Actually, often the Source connects to the MIDDLE of the spine?
+        // Or the Source IS the parent, so the spine starts at Source Y?
+        // Let's stick to the "Fork" style:
+        // Source -> vx.
+        // Spine runs along vx to cover all children ranges (and source entry).
 
-        // Find Source Index in sorted events
-        const sourceIndex = events.findIndex(e => e.type === 'source');
-        const sourceEvent = events[sourceIndex];
+        // Range of the vertical line:
+        // It must cover Source Y AND all Child Ys.
+        const allYs = [sourceY, ...destinations.map(p => p.y)];
+        const spineTop = Math.min(...allYs);
+        const spineBottom = Math.max(...allYs);
 
-        // Connect Source to Spine
-        // If source is somewhere in middle, it joins the spine.
-        // If source is at top/bottom, it starts/ends the spine?
-        // Actually, the structure is a fork.
-        // Source connects to Vx.
-        // Spine runs from MinY to MaxY (covering all children + source).
+        // However, aesthetically, we usually want:
+        // Source -> (curve) -> Spine
+        // Spine -> (curve) -> Child
 
-        // Let's iterate segments.
-        // We need to know if we are at the top or bottom of the spine to draw corners.
+        // If Source Y is strictly between First and Last Child, the spine is just FirstChildY to LastChildY.
+        // If Source Y is outside, we extend.
 
-        const spineTop = minY + r;
-        const spineBottom = maxY - r;
+        // Let's strictly draw segments.
 
-        // Draw Vertical Line (if space exists)
-        if (spineBottom >= spineTop) {
-            d += `M ${vx} ${spineTop} L ${vx} ${spineBottom} `;
-        }
+        // CONNECTIONS TO SPINE
 
-        // Process Connections
-        events.forEach(ev => {
-            const isTop = (ev.y === minY);
-            const isBottom = (ev.y === maxY);
-            const isMiddle = !isTop && !isBottom;
+        // Source -> Spine
+        // We draw: M sourceX sourceY L (vx-r) sourceY Q vx sourceY vx (sourceY + direction * r) ?
+        // This is complex.
 
-            if (ev.type === 'source') {
-                // Source (Left) -> Spine (Right)
-                // If Top: Line from left, Curve Down
-                if (isTop) {
-                    d += `M ${ev.x} ${ev.y} L ${vx - r} ${ev.y} Q ${vx} ${ev.y} ${vx} ${ev.y + r} `;
-                }
-                // If Bottom: Line from left, Curve Up
-                else if (isBottom) {
-                    d += `M ${ev.x} ${ev.y} L ${vx - r} ${ev.y} Q ${vx} ${ev.y} ${vx} ${ev.y - r} `;
-                }
-                // Middle: Just Straight Line (T-junction? No, usually forks don't T-junction from side. But here Source enters spine.)
-                // "All" -> Spine.
-                // If "All" is in middle (unlikely for Source, usually Source is one, Children many).
-                // But if Source Y is between Child Ys...
-                else {
-                    d += `M ${ev.x} ${ev.y} L ${vx} ${ev.y} `;
-                }
-            } else {
-                // Spine (Left) -> Child (Right)
-                // If Top: Curve from Down -> Right
-                if (isTop) {
-                    d += `M ${vx} ${ev.y + r} Q ${vx} ${ev.y} ${vx + r} ${ev.y} L ${ev.x} ${ev.y} `;
-                }
-                // If Bottom: Curve from Up -> Right
-                else if (isBottom) {
-                    d += `M ${vx} ${ev.y - r} Q ${vx} ${ev.y} ${vx + r} ${ev.y} L ${ev.x} ${ev.y} `;
-                }
-                // Middle: Straight Line from Spine
-                else {
-                    d += `M ${vx} ${ev.y} L ${ev.x} ${ev.y} `;
-                }
-            }
+        // Alternative: Just Horizontal and Vertical lines with arcs.
+
+        // Helper to draw horizontal-to-vertical corner
+        // from (x1, y1) to (x2, y2).
+        // Since we have a shared spine at x=vx.
+
+        // Source Connection:
+        // sourceX, sourceY -> vx, sourceY
+        // But we need a curve if it turns up/down.
+        // If sourceY is within the spine implementation, it's a T-junction or corner.
+
+        // Let's iterate all "Events" approach again but with fixed vx.
+
+        // Draw the vertical line segment first?
+        // Let's determine the purely vertical segment.
+        // Are we branching FROM the source Y?
+        // Yes, the conceptual "root" is at sourceY.
+        // But the visual spine might need to go up or down to reach children.
+
+        // Case 1: All children below Source.
+        // Spine goes from sourceY down to lastChildY.
+        // Case 2: Children above and below.
+        // Spine goes from firstChildY to lastChildY.
+
+        // Wait, if Source is in middle, does the spine break? No.
+        // The spine is continuous.
+
+        // Let's draw the vertical line from min(TargetYs) to max(TargetYs).
+        // AND include SourceY?
+        // Usually Source connects to the spine.
+        // So Spine Top = min(SourceY, destinations[0].y)
+        // Spine Bottom = max(SourceY, destinations[last].y)
+
+        // ADJUSTMENT: We want rounded corners.
+        // We can't just draw a single line.
+
+        // Let's build the path command `d`.
+
+        // 1. Source -> Spine
+        d += `M ${sourceX} ${sourceY} L ${vx - r} ${sourceY} `;
+
+        // Determine direction to turn for spine logic.
+        // Actually, the spine exists at x = vx.
+        // We need to render the vertical spine "smartly".
+
+        // Instead of complex logic, let's just draw:
+        // A. Horizontal line from Source to Spine.
+        // B. Vertical line along Spine.
+        // C. Horizontal lines from Spine to Children.
+        // AND handle corners for A and C relative to B.
+
+        // To do this cleanly with a single path:
+        // It's a tree.
+        // We can start at Source.
+        // Move to Spine.
+        // Then we can't "branch" in SVG path (it's one line), unless we re-trace or use multiple M commands.
+        // Yes, `d` can contain multiple sub-paths (MoveTo).
+
+        // Source -> Spine Intersection
+        // M sourceX sourceY L (vx) sourceY ? No corner?
+        // If we want corners:
+        // M sourceX sourceY L (vx - r?) sourceY ...
+
+        // Let's simplify.
+        // Draw Source -> Spine
+        // Check if we need to go up or down.
+        // If destinations extend above SourceY:
+        //    Line/Curve up.
+        // If destinations extend below SourceY:
+        //    Line/Curve down.
+
+        // Let's tackle "Source to Spine" first.
+        d += `M ${sourceX} ${sourceY} L ${vx} ${sourceY} `; // Straight line to spine
+
+        // Now "Spine" vertical.
+        // We need to cover [minY, maxY] of children.
+        // We can just draw M vx minY L vx maxY.
+        // But that overlaps the source junction without curves.
+
+        // REFINED AESTHETIC:
+        // The user wants "estetik". Sharp 90deg is techy but maybe too harsh.
+        // Rounded corners are better.
+
+        // Let's try this:
+        // 1. Calculate Spine Top and Bottom (based on children).
+        // 2. Adjust for SourceY.
+
+        const effectiveTop = Math.min(minY, sourceY);
+        const effectiveBottom = Math.max(maxY, sourceY);
+
+        // Draw Vertical Line Segment (with gaps for corners)
+        // M vx (effectiveTop + r) L vx (effectiveBottom - r)
+
+        // But what if effectiveTop == sourceY? (Source is top).
+        // Then we curve DOWN from Source.
+
+        // Let's do a sub-path for the Vertical Spine + Child Branches.
+
+        // Iterate children
+        destinations.forEach(dest => {
+            const dy = dest.y;
+            const dx = dest.x;
+
+            // Draw Branch from Spine to Child
+            // We start at Spine: (vx, dy)
+            // But we need to curve from the Vertical Spine.
+
+            // Is this child above or below source? or just relative to the spine's flow?
+            // Actually, we can draw the connection independently?
+            // No, the vertical line connects them.
+
+            // Let's draw:
+            // 1. Horizontal from Child to Spine-with-corner.
+            //    M dx dy L (vx + r) dy Q vx dy vx (dy - r_sign?)
+            //    Direction depends on where this child is relative to the "main" flow?
+            //    Actually, if we just draw L to vx, it's a T-junction.
+
+            // Simplest Aesthetic Algorithm (Orthogonal with radius):
+            // 1. Draw Source -> (vx, sourceY)
+            // 2. Draw Vertical Spine from (vx, minY) to (vx, maxY).
+            // 3. Draw Child -> (vx, childY)
+            // 4. ADD ROUNDING later? No, hard to do later.
+
+            // Let's try strict corners for alignment first, with standard "circuit" look.
+            // User said "estetik", maybe straight is enough if aligned.
+            // But "yumuşak" implies curves.
+
+            // Okay, let's try strict corners for alignment first, with standard "circuit" look.
+            // M sourceX sourceY L vx sourceY
+            // M vx minY L vx maxY
+            // M vx childY L childX childY
+
+            // Wait, if I do just this, the wipe animation (stroke-dasharray) looks weird because it's multiple sub-paths.
+            // It will wipe all segments simultaneously or in sequence?
+            // Depending on browser. Usually simultaneous for one path element?
+            // No, dashoffset applies to total length.
+            // So it will wipe the WHOLE tree linearly.
+            // That is a cool effect!
+            // Order of drawing matters for the wipe direction.
+
+            // Order:
+            // 1. Source -> Spine (Left to Right)
+            // 2. Spine Top -> Spine Bottom? Or Start from SourceY outwards?
+            //    If we draw `M` again, it jumps.
+            //    Wipe effect: The dash moves.
+            //    If the path is discontinuous (MoveTo), the hidden part "jumps".
+            //    Ideally, we want a continuous line? Impossible for a fork.
+
+            // But `stroke-dashoffset` works on the total length of the path, including jumps (jumps length = 0).
+            // So the "time" spent jumping is 0.
+
+            // To look good:
+            // Source -> Spine.
+            // then Spine Top?
+
+            // Let's just create ONE path string.
+            // M sourceX sourceY L vx sourceY (Trace 1)
+            // M vx minY L vx maxY (Trace 2 - The Spine)
+            // For each child: M vx childY L childX childY (Trace 3...N)
+
+            d += `M ${vx} ${dy} L ${dx} ${dy} `;
         });
+
+        // Add Spine Line
+        d += `M ${vx} ${minY} L ${vx} ${maxY} `;
 
         const path = document.createElementNS(svgNS, "path");
         path.setAttribute("d", d);
