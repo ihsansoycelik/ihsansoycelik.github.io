@@ -2,43 +2,43 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Data Management: Constant array of projects
     const projects = [
         {
-            title: "Neural Diversity Regularizes Hallucinations in Small Models",
-            tag: "AI / ML",
+            title: "p5-js-1",
+            tag: "P5.js",
             category: "all",
-            url: "#",
+            url: "p5-js-1/index.html",
             date: "2023-10-15",
             author: "Me",
             tech: "p5.js"
         },
         {
-            title: "Generative Landscapes with Perlin Noise",
+            title: "Kinetic-Poster-1",
             tag: "Generative",
-            category: "sketches",
-            url: "#",
+            category: "Posters",
+            url: "kinetic-poster-1/index.html#",
             date: "2023-09-22",
             author: "Me",
             tech: "p5.js"
         },
         {
-            title: "Physics Simulation: Double Pendulum",
-            tag: "Physics",
-            category: "simulations",
-            url: "#",
+            title: "Kinetic-Poster-2",
+            tag: "Generative",
+            category: "Posters",
+            url: "kinetic-poster-2/index.html",
             date: "2023-08-05",
             author: "Me",
-            tech: "Vanilla JS"
+            tech: "p5.js"
         },
         {
-            title: "Flow Fields and Noise",
-            tag: "Noise",
-            category: "sketches",
-            url: "#",
+            title: "Interactive-Graffiti-1",
+            tag: "Generative",
+            category: "Posters",
+            url: "Interactive-Graffiti-1/index.html",
             date: "2023-07-12",
             author: "Me",
             tech: "p5.js"
         },
         {
-            title: "Interactive Particle System",
+            title: "Null",
             tag: "Interaction",
             category: "simulations",
             url: "#",
@@ -46,8 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
             author: "Me",
             tech: "p5.js"
         },
-         {
-            title: "The Near Future of AI is Action-Driven",
+        {
+            title: "Null",
             tag: "AI / ML",
             category: "all",
             url: "#",
@@ -61,6 +61,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.nav-link');
     const tagLinks = document.querySelectorAll('.tag-link');
     const gridContainer = document.querySelector('.grid-container');
+    const projectFrame = document.getElementById('project-frame');
+    const projectViewer = document.getElementById('project-viewer');
+
+    // Iframe Auto-Resize Logic
+    projectFrame.addEventListener('load', () => {
+        try {
+            const iframeDoc = projectFrame.contentDocument || projectFrame.contentWindow.document;
+            if (iframeDoc) {
+                // Set height to content's scrollHeight
+                // Resetting to auto first helps if shrinking, but just scrollHeight is safer for now to prevent flicker
+                projectFrame.style.height = iframeDoc.body.scrollHeight + 'px';
+
+                // Optional: Observer for dynamic content changes
+                const ro = new ResizeObserver(() => {
+                    projectFrame.style.height = iframeDoc.body.scrollHeight + 'px';
+                });
+                ro.observe(iframeDoc.body);
+            }
+        } catch (e) {
+            console.warn('Cannot auto-resize iframe due to cross-origin or limitations', e);
+        }
+    });
 
     // Create SVG Layer
     const svgNS = "http://www.w3.org/2000/svg";
@@ -85,6 +107,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const link = document.createElement('a');
             link.href = project.url;
             link.className = 'project-link'; // For selection
+
+            // Intercept Click
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const url = project.url;
+
+                if (url && url !== '#' && url !== '') {
+                    projectFrame.src = url;
+                    projectFrame.style.display = 'block';
+
+                    // Smooth scroll to the iframe
+                    projectFrame.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
 
             // Title
             const titleSpan = document.createElement('span');
@@ -186,19 +222,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const isSingle = (events.length === 2 && Math.abs(events[0].y - events[1].y) < 5);
         if (isSingle) {
             // Force flat line
-             const commonY = events[0].y;
-             const sourceX = events.find(e => e.type === 'source').x;
-             const childX = events.find(e => e.type === 'child').x;
+            const commonY = events[0].y;
+            const sourceX = events.find(e => e.type === 'source').x;
+            const childX = events.find(e => e.type === 'child').x;
 
-             const d = `M ${sourceX} ${commonY} L ${childX} ${commonY}`;
+            const d = `M ${sourceX} ${commonY} L ${childX} ${commonY}`;
 
-             const path = document.createElementNS(svgNS, "path");
-             path.setAttribute("d", d);
-             path.setAttribute("stroke", "black");
-             path.setAttribute("stroke-width", "2");
-             path.setAttribute("fill", "none");
-             svgLayer.appendChild(path);
-             return;
+            const path = document.createElementNS(svgNS, "path");
+            path.setAttribute("d", d);
+            path.setAttribute("stroke", "black");
+            path.setAttribute("stroke-width", "1");
+            path.setAttribute("fill", "none");
+            svgLayer.appendChild(path);
+            return;
         }
 
         let d = "";
@@ -275,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const path = document.createElementNS(svgNS, "path");
         path.setAttribute("d", d);
         path.setAttribute("stroke", "black");
-        path.setAttribute("stroke-width", "2");
+        path.setAttribute("stroke-width", "1");
         path.setAttribute("fill", "none");
         svgLayer.appendChild(path);
     }
@@ -323,19 +359,25 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
 
-             tagLinks.forEach(l => l.classList.remove('active'));
-             e.target.classList.add('active');
-             currentTag = e.target.dataset.tag;
+            tagLinks.forEach(l => l.classList.remove('active'));
+            e.target.classList.add('active');
+            currentTag = e.target.dataset.tag;
 
-             filterProjects();
-             drawLines();
+            filterProjects();
+            drawLines();
         });
     });
 
     // Resize & Scroll Listeners
-    window.addEventListener('resize', drawLines);
-    window.addEventListener('scroll', drawLines);
+    // window.addEventListener('scroll', drawLines); // Removed scroll listener
+
+    // Resize Listeners
+    window.addEventListener('resize', () => {
+        drawLines();
+    });
 
     // Initial Draw
-    setTimeout(drawLines, 100);
+    setTimeout(() => {
+        drawLines();
+    }, 100);
 });

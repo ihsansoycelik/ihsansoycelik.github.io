@@ -1,48 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portfolio</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <header class="site-header">
-        <h1>İhsan Soyçelik</h1>
-    </header>
+    <div id="fixed-nav-wrapper">
+        <header class="site-header">
+            <h1>İhsan Soyçelik</h1>
+        </header>
 
-    <div class="grid-container">
-        <!-- Column 1: Main Navigation -->
-        <nav class="column nav-column">
-            <h2 class="column-header">Type</h2>
-            <ul class="tree-list" id="type-list">
-                <li><span class="num">01</span> <a href="#" class="nav-link active" data-filter="all">All</a></li>
-                <li><span class="num">02</span> <a href="#" class="nav-link" data-category="sketches">Sketches</a></li>
-                <li><span class="num">03</span> <a href="#" class="nav-link" data-category="simulations">Simulations</a></li>
-            </ul>
-        </nav>
+        <div class="grid-container">
+            <!-- Column 1: Main Navigation -->
+            <nav class="column nav-column">
+                <h2 class="column-header">Type</h2>
+                <ul class="tree-list" id="type-list">
+                    <li><span class="num">01</span> <a href="#" class="nav-link active" data-filter="all">All</a></li>
+                    <li><span class="num">02</span> <a href="#" class="nav-link" data-category="sketches">Sketches</a>
+                    </li>
+                    <li><span class="num">03</span> <a href="#" class="nav-link"
+                            data-category="simulations">Simulations</a>
+                    </li>
+                </ul>
+            </nav>
 
-        <!-- Column 2: Specific Tags/Topics -->
-        <aside class="column filter-column">
-            <h2 class="column-header">Topic</h2>
-            <ul class="tree-list" id="topic-list">
-                <li><span class="num">01</span> <a href="#" class="tag-link active" data-tag="all">All</a></li>
-                <li><span class="num">02</span> <a href="#" class="tag-link" data-tag="Generative">Generative</a></li>
-                <li><span class="num">03</span> <a href="#" class="tag-link" data-tag="Physics">Physics</a></li>
-                <li><span class="num">04</span> <a href="#" class="tag-link" data-tag="Noise">Noise</a></li>
-                <li><span class="num">05</span> <a href="#" class="tag-link" data-tag="Interaction">Interaction</a></li>
-            </ul>
-        </aside>
+            <!-- Column 2: Specific Tags/Topics -->
+            <aside class="column filter-column">
+                <h2 class="column-header">Topic</h2>
+                <ul class="tree-list" id="topic-list">
+                    <li><span class="num">01</span> <a href="#" class="tag-link active" data-tag="all">All</a></li>
+                    <li><span class="num">02</span> <a href="#" class="tag-link" data-tag="Generative">Generative</a>
+                    </li>
+                    <li><span class="num">03</span> <a href="#" class="tag-link" data-tag="Physics">Physics</a></li>
+                    <li><span class="num">04</span> <a href="#" class="tag-link" data-tag="Noise">Noise</a></li>
+                    <li><span class="num">05</span> <a href="#" class="tag-link" data-tag="Interaction">Interaction</a>
+                    </li>
+                </ul>
+            </aside>
 
-        <!-- Column 3: Project List -->
-        <main class="column project-column">
-            <h2 class="column-header">Articles</h2>
-            <div id="project-list" class="tree-list">
-                <!-- Projects will be injected here -->
-            </div>
-        </main>
+            <!-- Column 3: Project List -->
+            <main class="column project-column">
+                <h2 class="column-header">Projects</h2>
+                <div id="project-list" class="tree-list">
+                    <!-- Projects will be injected here -->
+                </div>
+            </main>
+
+            <!-- Column 4: Contact Info -->
+            <aside class="column contact-column">
+                <ul class="contact-list">
+                    <li>
+                        <a href="https://soycelik.com" target="_blank" class="contact-link">
+                            Visit my portfolio soycelik.com
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round class=" icon">
+                                <line x1="7" y1="17" x2="17" y2="7"></line>
+                                <polyline points="7 7 17 7 17 17"></polyline>
+                            </svg>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="mailto:contact@soycelik.com" class="contact-link">
+                            contact@soycelik.com
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z">
+                                </path>
+                                <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://instagram.com/isoycelik" target="_blank" class="contact-link">
+                            isoycelik
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                            </svg>
+                        </a>
+                    </li>
+                </ul>
+            </aside>
+        </div>
     </div>
+
+    <!-- Project Viewer Section -->
+    <div id="project-viewer">
+        <iframe id="project-frame" title="Project Display"></iframe>
+    </div>
+
+    <footer class="site-footer">
+        &copy; 2026 İhsan Soyçelik. All rights reserved.
+    </footer>
 
     <script src="script.js"></script>
 </body>
+
 </html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinetic Typography</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@900&family=Playfair+Display:ital,wght@1,700&display=swap"
+        rel="stylesheet">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- p5.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <!-- Sketch -->
+    <script src="sketch.js"></script>
+</head>
+
+<body>
+
+    <div class="controls-panel">
+        <div class="header">Controls</div>
+        <div class="separator"></div>
+
+        <div class="control-group">
+            <label>Heading</label>
+            <input type="text" id="inputLine1" value="They talk">
+        </div>
+
+        <div class="control-group">
+            <label>Subheading</label>
+            <input type="text" id="inputLine2" value="We Do.">
+        </div>
+
+        <div class="control-group">
+            <label>Speed</label>
+            <input type="range" id="sliderSpeed" min="0" max="100" value="30">
+        </div>
+
+        <div class="control-group">
+            <label>Roundness</label>
+            <input type="range" id="sliderRoundness" min="0" max="200" value="80">
+        </div>
+
+        <div class="control-group">
+            <label>Scale</label>
+            <input type="range" id="sliderScale" min="0.5" max="2" step="0.05" value="1">
+        </div>
+    </div>
+</body>
+
+</html>

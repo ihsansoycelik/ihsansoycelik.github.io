@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liquid Graffiti</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"></script>
+  <!-- Import Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  
+  <!-- Sidebar Container -->
+  <div id="sidebar-container">
+    <button id="sidebar-toggle" aria-label="Toggle Menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+    
+    <div id="sidebar">
+      <!-- Content Section -->
+      <div class="section">
+        <div class="section-header">CONTENT</div>
+        <div class="control-group">
+          <textarea id="text-content" rows="4">Here
+Comes
+The
+Boat</textarea>
+        </div>
+        <div class="control-group">
+          <label>Typography</label>
+          <select id="font-select">
+            <option value="Inter">Inter (Sans)</option>
+            <option value="Space Mono">Space Mono (Mono)</option>
+            <option value="Playfair Display">Playfair (Serif)</option>
+            <option value="Helvetica">Helvetica (Default)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Color Section -->
+      <div class="section">
+        <div class="section-header">COLOR</div>
+        <div class="control-group">
+          <label>BACKGROUND</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="bg-color-picker" value="#0022AA">
+            <div class="color-preview" id="bg-preview" style="background-color: #0022AA;"></div>
+          </div>
+        </div>
+        <div class="control-group">
+          <label>TEXT / BRUSH</label>
+          <div class="color-picker-wrapper">
+            <input type="color" id="text-color-picker" value="#FFFFFF">
+            <div class="color-preview" id="text-preview" style="background-color: #FFFFFF;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Animation Section -->
+      <div class="section">
+        <div class="section-header">ANIMATION</div>
+        <div class="control-group">
+          <label>FREQUENCY</label>
+          <input type="range" id="anim-freq" min="0" max="1" step="0.01" value="0.2">
+        </div>
+        <div class="control-group">
+          <label>AMPLITUDE</label>
+          <input type="range" id="anim-amp" min="0" max="100" step="1" value="20">
+        </div>
+        <div class="control-group">
+          <label>SPEED</label>
+          <input type="range" id="anim-speed" min="0" max="5" step="0.1" value="1.0">
+        </div>
+      </div>
+
+      <!-- Gradient Maps Section -->
+      <div class="section">
+        <div class="section-header">GRADIENT MAPS</div>
+        <div class="control-group row">
+          <label for="gradient-toggle">Enabled</label>
+          <input type="checkbox" id="gradient-toggle">
+        </div>
+        <div class="control-group" id="gradient-select-group" style="opacity: 0.5; pointer-events: none;">
+          <select id="gradient-select">
+            <option value="neon">Neon (Green-Pink)</option>
+            <option value="fire">Fire (Red-Yellow)</option>
+            <option value="ocean">Ocean (Blue-Cyan)</option>
+            <option value="bw">Grayscale</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Brush Section (Collapsed/Extra) -->
+      <div class="section">
+        <div class="section-header">BRUSH SETTINGS</div>
+        <div class="control-group">
+          <label>SIZE</label>
+          <input type="range" id="brush-size" min="5" max="100" value="25">
+        </div>
+        <div class="control-group">
+          <label>FLOW</label>
+          <input type="range" id="drip-speed" min="0.1" max="3.0" step="0.1" value="1.0">
+        </div>
+        <div class="control-group">
+           <button id="btn-clear" class="full-width-btn">Clear Canvas</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="sketch.js"></script>
+</body>
+</html>
