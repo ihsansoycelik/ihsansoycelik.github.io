@@ -96,21 +96,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const url = project.url;
 
                 if (url && url !== '#' && url !== '') {
-                    // Show Spinner, Hide Frame initially
-                    const spinner = document.getElementById('loading-spinner');
-                    spinner.style.display = 'block';
-                    projectFrame.style.display = 'none'; // Hide until loaded for cleaner effect
-
                     projectFrame.src = url;
+                    projectFrame.style.display = 'block';
 
-                    // Smooth scroll to the iframe container (viewer) instead of the frame
-                    projectViewer.scrollIntoView({ behavior: 'smooth' });
-
-                    // Hide Spinner on Load
-                    projectFrame.onload = () => {
-                        spinner.style.display = 'none';
-                        projectFrame.style.display = 'block';
-                    };
+                    // Smooth scroll to the iframe
+                    projectFrame.scrollIntoView({ behavior: 'smooth' });
                 }
             });
 
@@ -171,45 +161,134 @@ document.addEventListener('DOMContentLoaded', () => {
         const containerRect = gridContainer.getBoundingClientRect();
         const sourceRect = sourceEl.getBoundingClientRect();
 
-        // Source: right edge, vertical center
-        const sx = sourceRect.right - containerRect.left;
-        const sy = sourceRect.top + sourceRect.height / 2 - containerRect.top;
+        // Source Point: Right Middle
+        const x1 = sourceRect.right - containerRect.left;
+        const y1 = sourceRect.top + sourceRect.height / 2 - containerRect.top;
 
-        // Find leftmost destination X to position spine
-        let minDestX = Infinity;
-        const dests = [];
+        // Collect Destination Points
+        const destPoints = [];
+        let minX = Infinity;
 
         destNodeList.forEach(dest => {
-            const r = dest.getBoundingClientRect();
-            const x = r.left - containerRect.left;
-            const y = r.top + r.height / 2 - containerRect.top;
-            dests.push({ x, y, el: dest });
-            if (x < minDestX) minDestX = x;
+            const li = dest.closest('li') || dest.closest('.project-item');
+            const num = li.querySelector('.num');
+            const targetEl = num || dest;
+
+            const targetRect = targetEl.getBoundingClientRect();
+
+            // Destination Point: Left Middle
+            const dx = targetRect.left - containerRect.left - 10;
+            const dy = targetRect.top + targetRect.height / 2 - containerRect.top;
+
+            destPoints.push({ x: dx, y: dy, type: 'child' });
+            if (dx < minX) minX = dx;
         });
 
-        if (dests.length === 0) return;
-        dests.sort((a, b) => a.y - b.y);
+        // Vertical Spine X Position
+        const vx = minX - 20;
+        const r = 15; // Increased Radius for softer curves
 
-        const topY = dests[0].y;
-        const botY = dests[dests.length - 1].y;
+        // Combine Source and Children into a list of "Vertical Events"
+        const events = [
+            { y: y1, type: 'source', x: x1 },
+            ...destPoints
+        ];
 
-        // Spine positioned 15px before destination text
-        const spineX = minDestX - 15;
+        // Sort by Y
+        events.sort((a, b) => a.y - b.y);
 
-        // Corner radius
-        const r = 6;
+        const minY = events[0].y;
+        const maxY = events[events.length - 1].y;
+
+        // Alignment Fix: Check if source and single dest are close in Y
+        const isSingle = (events.length === 2 && Math.abs(events[0].y - events[1].y) < 5);
+        if (isSingle) {
+            // Force flat line
+            const commonY = events[0].y;
+            const sourceX = events.find(e => e.type === 'source').x;
+            const childX = events.find(e => e.type === 'child').x;
+
+            const d = `M ${sourceX} ${commonY} L ${childX} ${commonY}`;
+
+            const path = document.createElementNS(svgNS, "path");
+            path.setAttribute("d", d);
+            path.setAttribute("stroke", "black");
+            path.setAttribute("stroke-width", "1");
+            path.setAttribute("fill", "none");
+            path.classList.add('connection-line');
+            svgLayer.appendChild(path);
+            return;
+        }
 
         let d = "";
 
-        // Source to spine horizontal line
-        d += `M ${sx} ${sy} L ${spineX} ${sy} `;
+        // 1. Draw Vertical Spine with rounded ends
+        // But actually the spine connects horizontal arms.
+        // It's not just a vertical line. It's segments between arms.
 
-        // Vertical spine from top destination to bottom destination
-        d += `M ${spineX} ${topY} L ${spineX} ${botY} `;
+        // We draw:
+        // Source arm -> curve -> spine -> curve -> child arm.
 
-        // Horizontal branches from spine to each destination
-        dests.forEach(dest => {
-            d += `M ${spineX} ${dest.y} L ${dest.x - 5} ${dest.y} `;
+        // Find Source Index in sorted events
+        const sourceIndex = events.findIndex(e => e.type === 'source');
+        const sourceEvent = events[sourceIndex];
+
+        // Connect Source to Spine
+        // If source is somewhere in middle, it joins the spine.
+        // If source is at top/bottom, it starts/ends the spine?
+        // Actually, the structure is a fork.
+        // Source connects to Vx.
+        // Spine runs from MinY to MaxY (covering all children + source).
+
+        // Let's iterate segments.
+        // We need to know if we are at the top or bottom of the spine to draw corners.
+
+        const spineTop = minY + r;
+        const spineBottom = maxY - r;
+
+        // Draw Vertical Line (if space exists)
+        if (spineBottom >= spineTop) {
+            d += `M ${vx} ${spineTop} L ${vx} ${spineBottom} `;
+        }
+
+        // Process Connections
+        events.forEach(ev => {
+            const isTop = (ev.y === minY);
+            const isBottom = (ev.y === maxY);
+            const isMiddle = !isTop && !isBottom;
+
+            if (ev.type === 'source') {
+                // Source (Left) -> Spine (Right)
+                // If Top: Line from left, Curve Down
+                if (isTop) {
+                    d += `M ${ev.x} ${ev.y} L ${vx - r} ${ev.y} Q ${vx} ${ev.y} ${vx} ${ev.y + r} `;
+                }
+                // If Bottom: Line from left, Curve Up
+                else if (isBottom) {
+                    d += `M ${ev.x} ${ev.y} L ${vx - r} ${ev.y} Q ${vx} ${ev.y} ${vx} ${ev.y - r} `;
+                }
+                // Middle: Just Straight Line (T-junction? No, usually forks don't T-junction from side. But here Source enters spine.)
+                // "All" -> Spine.
+                // If "All" is in middle (unlikely for Source, usually Source is one, Children many).
+                // But if Source Y is between Child Ys...
+                else {
+                    d += `M ${ev.x} ${ev.y} L ${vx} ${ev.y} `;
+                }
+            } else {
+                // Spine (Left) -> Child (Right)
+                // If Top: Curve from Down -> Right
+                if (isTop) {
+                    d += `M ${vx} ${ev.y + r} Q ${vx} ${ev.y} ${vx + r} ${ev.y} L ${ev.x} ${ev.y} `;
+                }
+                // If Bottom: Curve from Up -> Right
+                else if (isBottom) {
+                    d += `M ${vx} ${ev.y - r} Q ${vx} ${ev.y} ${vx + r} ${ev.y} L ${ev.x} ${ev.y} `;
+                }
+                // Middle: Straight Line from Spine
+                else {
+                    d += `M ${vx} ${ev.y} L ${ev.x} ${ev.y} `;
+                }
+            }
         });
 
         const path = document.createElementNS(svgNS, "path");
