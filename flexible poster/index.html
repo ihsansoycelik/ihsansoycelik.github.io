@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kinetic Typography Poster</title>
+  
+  <!-- p5.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="app-container">
+    <div id="canvas-container"></div>
+
+    <div id="controls">
+      <h2>Controls</h2>
+      
+      <!-- Project Settings -->
+      <div class="control-section">
+        <h3>Project Settings</h3>
+        <div class="control-row">
+          <label>Width</label>
+          <input type="text" id="canvas-width" value="600">
+        </div>
+        <div class="control-row">
+          <label>Height</label>
+          <input type="text" id="canvas-height" value="800">
+        </div>
+        <div class="control-row" style="justify-content: flex-end; margin-top: 8px;">
+            <button id="apply-size" style="background:#0a84ff; border:none; color:white; padding:6px 12px; border-radius:6px; cursor:pointer; font-size: 0.9rem;">Apply Size</button>
+        </div>
+      </div>
+
+      <!-- Text Section -->
+      <div class="control-section">
+        <h3>Main Title</h3>
+        <div class="control-row">
+          <label>Line 1</label>
+          <input type="text" id="text-line-1" value="GUIN">
+        </div>
+        <div class="control-row">
+          <label>Line 2</label>
+          <input type="text" id="text-line-2" value="DALE">
+        </div>
+        <div class="control-row">
+          <label>Line 3</label>
+          <input type="text" id="text-line-3" value="RA">
+        </div>
+        <div class="control-row">
+          <label>Alignment</label>
+          <select id="text-align">
+            <option value="CENTER" selected>Center</option>
+            <option value="LEFT">Left</option>
+            <option value="RIGHT">Right</option>
+          </select>
+        </div>
+        <div class="control-row">
+           <label>Size</label>
+           <input type="range" id="text-size" min="50" max="300" step="1" value="150">
+        </div>
+        <div class="control-row">
+           <label>Pos X</label>
+           <input type="range" id="title-x" min="0" max="600" step="1" value="300">
+        </div>
+        <div class="control-row">
+           <label>Pos Y</label>
+           <input type="range" id="title-y" min="0" max="800" step="1" value="400">
+        </div>
+      </div>
+
+      <!-- Jitter Section (Collapsible) -->
+      <div class="control-section section-jitter">
+        <div class="section-header">
+          <h3>Jitter</h3>
+          <label class="toggle-switch">
+            <input type="checkbox" id="jitter-enabled" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div id="jitter-controls" class="section-content">
+          <div class="control-row">
+            <label>Speed</label>
+            <input type="range" id="jitter-speed" min="0" max="0.1" step="0.001" value="0.02">
+          </div>
+          <div class="control-row">
+            <label>Amount</label>
+            <input type="range" id="jitter-amount" min="0" max="50" step="1" value="10">
+          </div>
+        </div>
+      </div>
+
+      <!-- Overlay Text Section -->
+      <div class="control-section">
+        <h3>Overlay Content</h3>
+        <div class="control-grid">
+           <!-- Pair 1 -->
+           <input type="text" id="overlay-1-l" value="Safari" placeholder="Left">
+           <input type="text" id="overlay-1-r" value="Tipográfico" placeholder="Right">
+           <!-- Pair 2 -->
+           <input type="text" id="overlay-2-l" value="C. Pilar de Zaragoza" placeholder="Left">
+           <input type="text" id="overlay-2-r" value="57" placeholder="Right">
+           <!-- Pair 3 -->
+           <input type="text" id="overlay-3-l" value="19:45h" placeholder="Left">
+           <input type="text" id="overlay-3-r" value="8 de julio" placeholder="Right">
+           <!-- Pair 4 -->
+           <input type="text" id="overlay-4-l" value="Risas" placeholder="Left">
+           <input type="text" id="overlay-4-r" value="Gratis Total" placeholder="Right">
+        </div>
+      </div>
+
+      <!-- Colors (Collapsible Detail) -->
+      <details class="control-section section-colors" open>
+        <summary><h3>Colors</h3></summary>
+        <div class="section-content">
+          <div class="control-row"><label>Background</label> <input type="color" id="col-bg" value="#111111"></div>
+          <div class="control-row"><label>Main Face</label> <input type="color" id="col-face" value="#FFE600"></div>
+          <div class="control-row"><label>Shadow</label> <input type="color" id="col-shadow" value="#FF6F00"></div>
+          <div class="control-row"><label>Overlay Text</label> <input type="color" id="col-overlay-text" value="#7D5BA6"></div>
+          <div class="control-row"><label>Overlay Lines</label> <input type="color" id="col-overlay-lines" value="#7D5BA6"></div>
+          <div class="control-row"><label>Badge Bg</label> <input type="color" id="col-badge-bg" value="#FF6F00"></div>
+          <div class="control-row"><label>Badge Text</label> <input type="color" id="col-badge-text" value="#FFE600"></div>
+        </div>
+      </details>
+
+      <!-- Gradient Map (Collapsible) -->
+      <div class="control-section section-gradient">
+        <div class="section-header">
+          <h3>Gradient Map</h3>
+          <label class="toggle-switch">
+            <input type="checkbox" id="gradient-enabled">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div id="gradient-controls" class="section-content hidden">
+          <div class="control-row">
+            <label>Dark</label>
+            <input type="color" id="gradient-start" value="#220033">
+          </div>
+          <div class="control-row">
+            <label>Light</label>
+            <input type="color" id="gradient-end" value="#ffccaa">
+          </div>
+        </div>
+      </div>
+
+      <!-- Grain / Noise (Collapsible) -->
+      <div class="control-section section-grain">
+        <div class="section-header">
+          <h3>Grain Overlay</h3>
+          <label class="toggle-switch">
+            <input type="checkbox" id="grain-enabled">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div id="grain-controls" class="section-content hidden">
+          <div class="control-row">
+            <label>Amount</label>
+            <input type="range" id="grain-amount" min="0" max="255" step="1" value="40">
+          </div>
+          <div class="control-row">
+            <label>Frequency</label>
+            <input type="range" id="grain-frequency" min="1" max="10" step="1" value="2">
+          </div>
+          <div class="control-row">
+            <label>Blend Mode</label>
+            <select id="grain-blend">
+                <option value="OVERLAY" selected>Overlay</option>
+                <option value="MULTIPLY">Multiply</option>
+                <option value="SCREEN">Screen</option>
+                <option value="DIFFERENCE">Difference</option>
+                <option value="ADD">Add</option>
+            </select>
+          </div>
+          <div class="control-row">
+            <label>Animated</label>
+            <label class="toggle-switch">
+                <input type="checkbox" id="grain-animated" checked>
+                <span class="slider"></span>
+            </label>
+          </div>
+          <div class="control-row">
+            <label>Type</label>
+            <select id="grain-type">
+                <option value="MONO" selected>Mono</option>
+                <option value="COLOR">Color</option>
+                <option value="SCANLINES">Scanlines</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Sketch Script -->
+  <script src="sketch.js"></script>
+</body>
+</html>
