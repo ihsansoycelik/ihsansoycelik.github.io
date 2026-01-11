@@ -386,8 +386,13 @@ function setupSidebar(sidebar) {
   let gradToggleRow = createDiv().class('toggle-row').parent(gradContent);
   createSpan('Enabled').class('toggle-label').parent(gradToggleRow);
   let gradSwitch = createElement('label').class('switch').parent(gradToggleRow);
-  let gradInput = createCheckbox('', params.useGradient).parent(gradSwitch);
-  gradInput.changed(() => params.useGradient = gradInput.checked());
+  let gradInput = createElement('input');
+  gradInput.attribute('type', 'checkbox');
+  if (params.useGradient) gradInput.attribute('checked', '');
+  gradInput.parent(gradSwitch);
+  gradInput.changed(() => {
+    params.useGradient = gradInput.elt.checked;
+  });
   createSpan().class('slider').parent(gradSwitch);
   
   createSpan('Start Color').parent(gradContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase');
@@ -416,8 +421,13 @@ function setupSidebar(sidebar) {
   let noiseToggleRow = createDiv().class('toggle-row').parent(noiseContent);
   createSpan('Enabled').class('toggle-label').parent(noiseToggleRow);
   let noiseSwitch = createElement('label').class('switch').parent(noiseToggleRow);
-  let noiseInput = createCheckbox('', params.useNoise).parent(noiseSwitch);
-  noiseInput.changed(() => params.useNoise = noiseInput.checked());
+  let noiseInput = createElement('input');
+  noiseInput.attribute('type', 'checkbox');
+  if (params.useNoise) noiseInput.attribute('checked', '');
+  noiseInput.parent(noiseSwitch);
+  noiseInput.changed(() => {
+    params.useNoise = noiseInput.elt.checked;
+  });
   createSpan().class('slider').parent(noiseSwitch);
   createSliderControl("Intensity", 0, 100, params.noiseIntensity, 1, noiseContent, v => params.noiseIntensity = v);
 
