@@ -210,7 +210,7 @@ a {
     width: 100%;
     margin-top: 5px;
     /* Reduced from 40px to minimal gap */
-    padding: 0 40px 40px 40px;
+    padding: 0;
 }
 
 #project-frame {

@@ -27,6 +27,7 @@ uniform vec2 uResolution;
 
 // CRT Params
 uniform float uCurve;
+uniform float uZoom;
 uniform float uScanlineIntensity;
 uniform float uGlow;
 uniform float uNoise;
@@ -58,6 +59,7 @@ float noise(vec2 st) {
 // Barrel Distortion
 vec2 curve(vec2 uv) {
     vec2 centered = uv * 2.0 - 1.0;
+    centered /= uZoom; // Apply zoom scaling
     vec2 offset = centered.yx / 5.0; // Aspect ratio fix roughly
     centered = centered + centered * dot(centered, centered) * uCurve;
     return centered * 0.5 + 0.5;
@@ -170,6 +172,7 @@ let params = {
     magRadius: 0.25,
     magPos: { x: 0.5, y: 0.5 },
     curve: 0.15,
+    zoom: 1.0,
     scanlines: 0.4,
     glow: 1.2,
     noise: 0.15,
@@ -264,6 +267,7 @@ function draw() {
     crtShader.setUniform('uMagRadius', parseFloat(params.magRadius));
 
     crtShader.setUniform('uCurve', parseFloat(params.curve));
+    crtShader.setUniform('uZoom', parseFloat(params.zoom));
     crtShader.setUniform('uScanlineIntensity', parseFloat(params.scanlines));
     crtShader.setUniform('uGlow', parseFloat(params.glow));
     crtShader.setUniform('uNoise', parseFloat(params.noise));
@@ -271,7 +275,8 @@ function draw() {
     crtShader.setUniform('uVignette', parseFloat(params.vignette));
 
     // Render a quad to fill screen with shader
-    rect(0, 0, width, height);
+    // In WebGL mode, (0,0) is center. We need to cover the screen.
+    rect(-width/2, -height/2, width, height);
 }
 
 function drawRetroGrid(pg) {
@@ -297,6 +302,7 @@ function setupUI() {
         magStr: document.getElementById('MagStrength'),
         magRad: document.getElementById('MagRadius'),
         curve: document.getElementById('CrtCurve'),
+        zoom: document.getElementById('CrtZoom'),
         scan: document.getElementById('CrtScanlines'),
         glow: document.getElementById('CrtGlow'),
         noise: document.getElementById('CrtNoise'),
@@ -323,6 +329,7 @@ function setupUI() {
     inputs.magRad.addEventListener('input', (e) => params.magRadius = parseFloat(e.target.value));
 
     inputs.curve.addEventListener('input', (e) => params.curve = parseFloat(e.target.value));
+    inputs.zoom.addEventListener('input', (e) => params.zoom = parseFloat(e.target.value));
     inputs.scan.addEventListener('input', (e) => params.scanlines = parseFloat(e.target.value));
     inputs.glow.addEventListener('input', (e) => params.glow = parseFloat(e.target.value));
     inputs.noise.addEventListener('input', (e) => params.noise = parseFloat(e.target.value));

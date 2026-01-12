@@ -1,0 +1,12 @@
+127.0.0.1 - - [12/Jan/2026 02:33:20] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 02:33:20] "GET /script.js HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 02:33:20] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 02:33:21] "GET /crt-simulation/index.html HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 02:33:21] "GET /crt-simulation/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 02:33:21] "GET /crt-simulation/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 09:58:25] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 09:58:25] "GET /script.js HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 09:58:25] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 09:58:26] "GET /crt-simulation/index.html HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 09:58:26] "GET /crt-simulation/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 09:58:26] "GET /crt-simulation/style.css HTTP/1.1" 200 -

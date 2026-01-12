@@ -2,6 +2,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Data Management: Constant array of projects
     const projects = [
         {
+            title: "CRT Simulation",
+            tag: "Interaction",
+            category: "simulations",
+            url: "crt-simulation/index.html",
+            date: "2023-10-30",
+            author: "Me",
+            tech: "p5.js"
+        },
+        {
             title: "p5-js-1",
             tag: "P5.js",
             category: "all",
