@@ -36,6 +36,15 @@ document.addEventListener('DOMContentLoaded', () => {
             date: "2023-07-12",
             author: "Me",
             tech: "p5.js"
+        },
+        {
+            title: "More is More",
+            tag: "Generative",
+            category: "Posters",
+            url: "more-is-more/index.html",
+            date: "2023-10-27",
+            author: "Me",
+            tech: "p5.js"
         }
     ];
 
