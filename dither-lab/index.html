@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dither Lab - Professional Dithering Tool</title>
+    <link rel="stylesheet" href="css/style.css">
+    <meta name="description" content="Advanced image and video dithering tool with WebGL acceleration.">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation Bar -->
+        <header class="top-bar">
+            <div class="logo">Dither Lab</div>
+            <div class="actions">
+                <button id="btn-upload" class="btn primary">Open File</button>
+                <input type="file" id="file-input" multiple accept="image/*,video/*" style="display: none;">
+                <button id="btn-export" class="btn success">Export</button>
+                <button id="btn-compare" class="btn secondary">Compare: Off</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Sidebar for Controls -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <h3>Dithering Algorithm</h3>
+                    <select id="algo-select">
+                        <optgroup label="Error Diffusion (CPU)">
+                            <option value="floyd-steinberg">Floyd-Steinberg</option>
+                            <option value="atkinson">Atkinson</option>
+                            <option value="stucki">Stucki</option>
+                            <option value="burkes">Burkes</option>
+                            <option value="sierra">Sierra</option>
+                            <option value="sierra-two-row">Sierra Two-Row</option>
+                            <option value="sierra-lite">Sierra Lite</option>
+                            <option value="jarvis">Jarvis-Judice-Ninke</option>
+                        </optgroup>
+                        <optgroup label="Ordered (WebGL)">
+                            <option value="bayer-2">Bayer 2x2</option>
+                            <option value="bayer-4">Bayer 4x4</option>
+                            <option value="bayer-8">Bayer 8x8</option>
+                            <option value="bayer-16">Bayer 16x16</option>
+                            <option value="cluster-4">Cluster 4x4</option>
+                            <option value="cluster-8">Cluster 8x8</option>
+                        </optgroup>
+                        <optgroup label="Noise / Random">
+                            <option value="blue-noise">Blue Noise</option>
+                            <option value="white-noise">White Noise</option>
+                        </optgroup>
+                         <optgroup label="Retro / Custom">
+                            <option value="halftone">Halftone</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Color Palette</h3>
+                    <select id="palette-select">
+                        <option value="bw">Black & White (1-bit)</option>
+                        <option value="gray-4">Grayscale (2-bit)</option>
+                        <option value="gray-8">Grayscale (3-bit)</option>
+                        <option value="gameboy">Game Boy</option>
+                        <option value="cga">CGA (Palette 1)</option>
+                        <option value="cga-2">CGA (Palette 2)</option>
+                        <option value="ega">EGA (16 colors)</option>
+                        <option value="web">Web Safe</option>
+                        <option value="custom">Custom (Extract from Image)</option>
+                    </select>
+                    <div id="palette-colors" class="palette-preview"></div>
+                    <div class="control-group">
+                        <label for="color-count">Color Count (Reduction)</label>
+                        <input type="range" id="color-count" min="2" max="256" value="4">
+                        <span class="value-display" id="color-count-val">4</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3>Adjustments</h3>
+                    <div class="control-group">
+                        <label for="brightness">Brightness</label>
+                        <input type="range" id="brightness" min="-100" max="100" value="0">
+                        <span class="value-display" id="brightness-val">0</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="contrast">Contrast</label>
+                        <input type="range" id="contrast" min="-100" max="100" value="0">
+                        <span class="value-display" id="contrast-val">0</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="dither-amount">Dither Amount</label>
+                        <input type="range" id="dither-amount" min="0" max="100" value="100">
+                        <span class="value-display" id="dither-amount-val">100%</span>
+                    </div>
+                    <div class="control-group">
+                        <label for="pixel-scale">Pixel Scale</label>
+                        <input type="range" id="pixel-scale" min="1" max="20" value="1">
+                        <span class="value-display" id="pixel-scale-val">1x</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Canvas Area -->
+            <main class="preview-area" id="drop-zone">
+                <div class="canvas-wrapper">
+                    <canvas id="dither-canvas"></canvas>
+                </div>
+                <div class="loading-overlay hidden" id="loading-indicator">
+                    <div class="spinner"></div>
+                    <div class="loading-text">Processing...</div>
+                </div>
+                <div class="empty-state" id="empty-state">
+                    <p>Drag & Drop an image/video here<br>or click "Open File"</p>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
