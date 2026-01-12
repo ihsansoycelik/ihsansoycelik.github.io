@@ -386,8 +386,13 @@ function setupSidebar(sidebar) {
   let gradToggleRow = createDiv().class('toggle-row').parent(gradContent);
   createSpan('Enabled').class('toggle-label').parent(gradToggleRow);
   let gradSwitch = createElement('label').class('switch').parent(gradToggleRow);
-  let gradInput = createCheckbox('', params.useGradient).parent(gradSwitch);
-  gradInput.changed(() => params.useGradient = gradInput.checked());
+  let gradInput = createElement('input');
+  gradInput.attribute('type', 'checkbox');
+  if (params.useGradient) gradInput.attribute('checked', '');
+  gradInput.parent(gradSwitch);
+  gradInput.changed(() => {
+    params.useGradient = gradInput.elt.checked;
+  });
   createSpan().class('slider').parent(gradSwitch);
   
   createSpan('Start Color').parent(gradContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase');
@@ -416,8 +421,13 @@ function setupSidebar(sidebar) {
   let noiseToggleRow = createDiv().class('toggle-row').parent(noiseContent);
   createSpan('Enabled').class('toggle-label').parent(noiseToggleRow);
   let noiseSwitch = createElement('label').class('switch').parent(noiseToggleRow);
-  let noiseInput = createCheckbox('', params.useNoise).parent(noiseSwitch);
-  noiseInput.changed(() => params.useNoise = noiseInput.checked());
+  let noiseInput = createElement('input');
+  noiseInput.attribute('type', 'checkbox');
+  if (params.useNoise) noiseInput.attribute('checked', '');
+  noiseInput.parent(noiseSwitch);
+  noiseInput.changed(() => {
+    params.useNoise = noiseInput.elt.checked;
+  });
   createSpan().class('slider').parent(noiseSwitch);
   createSliderControl("Intensity", 0, 100, params.noiseIntensity, 1, noiseContent, v => params.noiseIntensity = v);
 
@@ -584,35 +594,7 @@ function draw() {
 }
 
 function drawUI() {
-  noStroke();
-  fill(params.textColor);
-  textSize(12);
-  textFont('Arial'); 
-  textAlign(LEFT, TOP);
-  
-  text("NIGHT BOAT TO CAIRO BY MADNESS.", 20, 20);
-  text("@holke79", 20, height - 30);
-  
-  push();
-  translate(width - 40, 40);
-  noFill();
-  stroke(params.textColor);
-  strokeWeight(1);
-  ellipse(0, 0, 50, 50);
-  fill(params.textColor);
-  noStroke();
-  textAlign(CENTER, CENTER);
-  textSize(16);
-  text("79", 0, 1);
-  pop();
-  
-  push();
-  translate(width - 20, height / 2);
-  rotate(HALF_PI);
-  textAlign(CENTER, CENTER);
-  textSize(10);
-  text("HERE COMES THE BOAT, ONLY HALF-AFLOAT.", 0, 0);
-  pop();
+  // UI text removed as per request
 }
 
 function saveLoop() {
