@@ -45,6 +45,15 @@ document.addEventListener('DOMContentLoaded', () => {
             date: "2023-10-27",
             author: "Me",
             tech: "p5.js"
+        },
+        {
+            title: "Graffiti Sketch",
+            tag: "Three.js",
+            category: "all",
+            url: "graffiti-sketch/index.html",
+            date: "2023-10-31",
+            author: "Me",
+            tech: "three.js"
         }
     ];
 
