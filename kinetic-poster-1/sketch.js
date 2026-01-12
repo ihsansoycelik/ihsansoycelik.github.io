@@ -18,6 +18,10 @@ let params = {
   freq: 0.08,
   amp: 20,
   speed: 0.05,
+  echoCount: 5,
+  echoLag: 5,
+  mouseInteraction: true,
+  mouseRadius: 200,
   useGradient: false,
   gradientColor1: '#FF0080',
   gradientColor2: '#FF8C00',
@@ -288,12 +292,12 @@ function setup() {
     let sidebar = createDiv().id('sidebar').parent(mainContainer);
 
     // Canvas
-    let cnv = createCanvas(800, 800);
+    let sidebarWidth = 320;
+    let cWidth = windowWidth - sidebarWidth;
+    let cHeight = windowHeight;
+    let cnv = createCanvas(cWidth, cHeight);
     cnv.parent(canvasContainer);
     cnv.id('defaultCanvas0');
-    cnv.style('max-width', '100%');
-    cnv.style('max-height', '100%');
-    cnv.style('object-fit', 'contain');
 
     // Create UI - DO THIS BEFORE FONTS
     setupSidebar(sidebar);
@@ -354,19 +358,18 @@ function setupSidebar(sidebar) {
     return content;
   }
 
-  // Color
-  let colorContent = createSection('Color', sidebar, true);
-  createSpan('Background').parent(colorContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase');
-  let bgPicker = createColorPicker(params.bgColor).parent(colorContent);
-  bgPicker.input(() => {
-    params.bgColor = bgPicker.value();
-    // Update container bg for seamlessness
-    select('#canvas-container').style('background', params.bgColor);
+  // Typography
+  let fontContent = createSection('Typography', sidebar, true);
+  let fontSelect = createSelect().parent(fontContent);
+  for (let f in fontUrls) {
+    fontSelect.option(f);
+  }
+  fontSelect.selected(currentFontName);
+  fontSelect.changed(() => {
+    currentFontName = fontSelect.value();
+    currentFont = fonts[currentFontName];
+    updateGeometry();
   });
-  
-  createSpan('Text').parent(colorContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase').style('margin-top','8px');
-  let textPicker = createColorPicker(params.textColor).parent(colorContent);
-  textPicker.input(() => params.textColor = textPicker.value());
 
   // Animation
   let animContent = createSection('Animation', sidebar, true);
@@ -381,10 +384,30 @@ function setupSidebar(sidebar) {
   createSliderControl("Amplitude", 0, 80, params.amp, 1, animContent, v => params.amp = v);
   createSliderControl("Speed", 0.01, 0.2, params.speed, 0.01, animContent, v => params.speed = v);
 
+  // Effects (Echo, Mouse, Gradient, Noise)
+  let effectsContent = createSection('Effects', sidebar, false);
+
+  // Echo
+  createDiv('Liquid Echo').parent(effectsContent).style('font-weight','bold').style('font-size','12px').style('margin-top','4px');
+  createSliderControl("Echo Count", 0, 20, params.echoCount, 1, effectsContent, v => params.echoCount = v);
+  createSliderControl("Echo Lag", 0, 20, params.echoLag, 0.1, effectsContent, v => params.echoLag = v);
+
+  // Mouse Interaction
+  createDiv('Interaction').parent(effectsContent).style('font-weight','bold').style('font-size','12px').style('margin-top','8px');
+  let mouseRow = createDiv().class('toggle-row').parent(effectsContent);
+  createSpan('Mouse Repulsion').class('toggle-label').parent(mouseRow).style('font-size','11px');
+  let mouseSwitch = createElement('label').class('switch').parent(mouseRow);
+  let mouseInput = createElement('input').attribute('type', 'checkbox').parent(mouseSwitch);
+  if (params.mouseInteraction) mouseInput.attribute('checked', '');
+  mouseInput.changed(() => params.mouseInteraction = mouseInput.elt.checked);
+  createSpan().class('slider').parent(mouseSwitch);
+
+  createSliderControl("Radius", 50, 500, params.mouseRadius, 10, effectsContent, v => params.mouseRadius = v);
+
   // Gradient
-  let gradContent = createSection('Gradient Maps', sidebar, false);
-  let gradToggleRow = createDiv().class('toggle-row').parent(gradContent);
-  createSpan('Enabled').class('toggle-label').parent(gradToggleRow);
+  createDiv('Gradient').parent(effectsContent).style('font-weight','bold').style('font-size','12px').style('margin-top','8px');
+  let gradToggleRow = createDiv().class('toggle-row').parent(effectsContent);
+  createSpan('Enabled').class('toggle-label').parent(gradToggleRow).style('font-size','11px');
   let gradSwitch = createElement('label').class('switch').parent(gradToggleRow);
   let gradInput = createElement('input');
   gradInput.attribute('type', 'checkbox');
@@ -395,31 +418,18 @@ function setupSidebar(sidebar) {
   });
   createSpan().class('slider').parent(gradSwitch);
   
-  createSpan('Start Color').parent(gradContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase');
-  let g1Picker = createColorPicker(params.gradientColor1).parent(gradContent);
+  createSpan('Start Color').parent(effectsContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase');
+  let g1Picker = createColorPicker(params.gradientColor1).parent(effectsContent);
   g1Picker.input(() => params.gradientColor1 = g1Picker.value());
   
-  createSpan('End Color').parent(gradContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase').style('margin-top','8px');
-  let g2Picker = createColorPicker(params.gradientColor2).parent(gradContent);
+  createSpan('End Color').parent(effectsContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase').style('margin-top','8px');
+  let g2Picker = createColorPicker(params.gradientColor2).parent(effectsContent);
   g2Picker.input(() => params.gradientColor2 = g2Picker.value());
 
-  // Typography
-  let fontContent = createSection('Typography', sidebar, false);
-  let fontSelect = createSelect().parent(fontContent);
-  for (let f in fontUrls) {
-    fontSelect.option(f);
-  }
-  fontSelect.selected(currentFontName);
-  fontSelect.changed(() => {
-    currentFontName = fontSelect.value();
-    currentFont = fonts[currentFontName];
-    updateGeometry();
-  });
-
-  // Noise
-  let noiseContent = createSection('Grain Noise', sidebar, false);
-  let noiseToggleRow = createDiv().class('toggle-row').parent(noiseContent);
-  createSpan('Enabled').class('toggle-label').parent(noiseToggleRow);
+  // Noise (Moved to Effects or kept separate? Let's keep it in Effects)
+  createDiv('Grain Noise').parent(effectsContent).style('font-weight','bold').style('font-size','12px').style('margin-top','8px');
+  let noiseToggleRow = createDiv().class('toggle-row').parent(effectsContent);
+  createSpan('Enabled').class('toggle-label').parent(noiseToggleRow).style('font-size','11px');
   let noiseSwitch = createElement('label').class('switch').parent(noiseToggleRow);
   let noiseInput = createElement('input');
   noiseInput.attribute('type', 'checkbox');
@@ -429,7 +439,23 @@ function setupSidebar(sidebar) {
     params.useNoise = noiseInput.elt.checked;
   });
   createSpan().class('slider').parent(noiseSwitch);
-  createSliderControl("Intensity", 0, 100, params.noiseIntensity, 1, noiseContent, v => params.noiseIntensity = v);
+  createSliderControl("Intensity", 0, 100, params.noiseIntensity, 1, effectsContent, v => params.noiseIntensity = v);
+
+  // Color
+  let colorContent = createSection('Color', sidebar, false);
+  createSpan('Background').parent(colorContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase');
+  let bgPicker = createColorPicker(params.bgColor).parent(colorContent);
+  bgPicker.input(() => {
+    params.bgColor = bgPicker.value();
+    // Update container bg for seamlessness
+    select('#canvas-container').style('background', params.bgColor);
+  });
+
+  createSpan('Text').parent(colorContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase').style('margin-top','8px');
+  let textPicker = createColorPicker(params.textColor).parent(colorContent);
+  textPicker.input(() => params.textColor = textPicker.value());
+
+  // Noise section removed (merged into Effects)
 
   // Save
   let saveBtn = createButton('Save Loop').class('save-btn').parent(sidebar);
@@ -441,16 +467,44 @@ function updateGeometry() {
   generateGeometry();
 }
 
+function windowResized() {
+  let sidebarWidth = 320;
+  resizeCanvas(windowWidth - sidebarWidth, windowHeight);
+  updateGeometry();
+}
+
 function generateGeometry() {
   fontData = [];
   if (!currentFont) {
-    // console.warn("generateGeometry: No current font set.");
     return;
   }
   
-  let startY = 200;
+  // Dynamic font sizing
+  // Find longest line to determine scale
+  let maxW = 0;
+  let testSize = 100;
+  for (let str of textLines) {
+      let b = currentFont.textBounds(str, 0, 0, testSize);
+      if (b.w > maxW) maxW = b.w;
+  }
+
+  // Target width: 80% of canvas width
+  // Target height: 80% of canvas height
+  let targetW = width * 0.8;
+  let scaleFactor = targetW / maxW;
+
+  // Also check height constraint
+  let estimatedTotalH = textLines.length * testSize * 1.0;
+  if (estimatedTotalH * scaleFactor > height * 0.8) {
+      scaleFactor = (height * 0.8) / estimatedTotalH;
+  }
+
+  fontSize = testSize * scaleFactor;
+  // Cap font size to avoid absurdity on huge screens
+  fontSize = min(fontSize, 500);
+
   let totalH = textLines.length * fontSize;
-  startY = (800 / 2) - (totalH / 2) + (fontSize * 0.75);
+  let startY = (height / 2) - (totalH / 2) + (fontSize * 0.75);
 
   for (let i = 0; i < textLines.length; i++) {
     let str = textLines[i];
@@ -464,7 +518,7 @@ function generateGeometry() {
       continue;
     }
     
-    let x = (800 / 2) - (b.w / 2);
+    let x = (width / 2) - (b.w / 2);
     let y = startY + i * fontSize;
     
     let pts;
@@ -550,33 +604,74 @@ function draw() {
         gradient.addColorStop(1, params.gradientColor2);
       }
 
-      for (let i = 0; i < fontData.length; i++) {
-        let lineContours = fontData[i];
-        for (let j = 0; j < lineContours.length; j++) {
-          let contour = lineContours[j];
-          
-          if (contour.isHole) {
-            fill(params.bgColor);
-            stroke(params.bgColor);
-          } else {
-            if (params.useGradient) {
-              drawingContext.fillStyle = gradient;
-              drawingContext.strokeStyle = gradient;
+      // Echo Loop (Back to Front)
+      let passes = params.echoCount;
+      for (let e = passes; e >= 0; e--) {
+        // e=0 is front (latest), e=passes is back (oldest)
+
+        let alphaNorm = map(e, 0, passes, 1, 0.1);
+        drawingContext.globalAlpha = alphaNorm;
+
+        // Phase offset for time
+        let timeShift = e * (params.echoLag * 0.1);
+        let t = (frameCount * params.speed) - timeShift;
+
+        for (let i = 0; i < fontData.length; i++) {
+          let lineContours = fontData[i];
+          for (let j = 0; j < lineContours.length; j++) {
+            let contour = lineContours[j];
+
+            if (contour.isHole) {
+              fill(params.bgColor);
+              stroke(params.bgColor);
             } else {
-              fill(params.textColor);
-              stroke(params.textColor);
+              if (params.useGradient) {
+                drawingContext.fillStyle = gradient;
+                drawingContext.strokeStyle = gradient;
+              } else {
+                fill(params.textColor);
+                stroke(params.textColor);
+              }
             }
+
+            beginShape();
+            for (let k = 0; k < contour.length; k++) {
+              let p = contour[k];
+
+              // Multi-frequency Wave
+              let wave1 = sin(p.y * params.freq + t) * params.amp;
+              let wave2 = cos(p.y * params.freq * 2.5 + t * 1.5) * (params.amp * 0.5);
+
+              // Mouse Interaction
+              let dx = 0;
+              let dy = 0;
+              let mx = mouseX;
+              let my = mouseY;
+
+              if (params.mouseInteraction) {
+                 let px = p.x + wave1 + wave2;
+                 let py = p.y;
+                 let d = dist(mx, my, px, py);
+
+                 if (d < params.mouseRadius) {
+                   let force = map(d, 0, params.mouseRadius, 1, 0);
+                   force = pow(force, 2);
+
+                   let angle = atan2(py - my, px - mx);
+                   let push = force * 150;
+
+                   dx = cos(angle) * push;
+                   dy = sin(angle) * push;
+                 }
+              }
+
+              vertex(p.x + wave1 + wave2 + dx, p.y + dy);
+            }
+            endShape(CLOSE);
           }
-          
-          beginShape();
-          for (let k = 0; k < contour.length; k++) {
-            let p = contour[k];
-            let wave = sin(p.y * params.freq + frameCount * params.speed) * params.amp;
-            vertex(p.x + wave, p.y);
-          }
-          endShape(CLOSE);
         }
       }
+      drawingContext.globalAlpha = 1.0;
     }
     
     drawUI();
