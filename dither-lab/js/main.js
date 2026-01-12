@@ -189,6 +189,11 @@ function handleFile(file) {
                 state.image.height = img.height;
                 state.image.type = 'image';
 
+                // Set canvas resolution to match image
+                const canvas = document.getElementById('dither-canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+
                 // Reset texture to image
                 loadTexture(img);
                 document.getElementById('loading-indicator').classList.add('hidden');

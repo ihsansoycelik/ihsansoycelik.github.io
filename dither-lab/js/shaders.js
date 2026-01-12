@@ -38,13 +38,34 @@ export function getShaders() {
 
             // Find closest color in palette
             vec3 findClosestColor(vec3 color) {
-                float minDist = 1000.0;
+                float minDist = 100000.0;
                 vec3 closest = vec3(0.0);
                 for (int i = 0; i < 256; i++) {
                     if (float(i) >= u_paletteSize) break;
                     float u = (float(i) + 0.5) / 256.0;
                     vec3 pColor = texture2D(u_palette, vec2(u, 0.5)).rgb;
-                    float dist = distance(color, pColor);
+
+                    // Redmean approximation for better perceptual distance
+                    // delta = sqrt(2*dr^2 + 4*dg^2 + 3*db^2 + r_mean*(...))
+                    // Simplified weighted Euclidean:
+                    vec3 diff = color - pColor;
+                    float dist = dot(diff * diff, vec3(0.299, 0.587, 0.114)); // Simple luma weight
+                    // actually standard weighted RGB is better:
+                    // dist = 0.3 * dr*dr + 0.59 * dg*dg + 0.11 * db*db ?
+                    // Let's use standard Rec 601 weights approx squared: 30, 59, 11
+
+                    // Better: Redmean
+                    // float rmean = (color.r + pColor.r) / 2.0;
+                    // float r = color.r - pColor.r;
+                    // float g = color.g - pColor.g;
+                    // float b = color.b - pColor.b;
+                    // float weightR = 2.0 + rmean;
+                    // float weightG = 4.0;
+                    // float weightB = 3.0 - rmean; // This is for 0-1 range? No, 0-255.
+
+                    // Simple weighted distance for shader performance
+                    dist = 2.0 * diff.r * diff.r + 4.0 * diff.g * diff.g + 3.0 * diff.b * diff.b;
+
                     if (dist < minDist) {
                         minDist = dist;
                         closest = pColor;
