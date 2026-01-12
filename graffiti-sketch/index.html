@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graffiti Sketch</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+
+    <div class="control-panel">
+        <div class="panel-header">Graffiti Tools</div>
+
+        <div class="control-group">
+            <label for="colorPicker">Color</label>
+            <input type="color" id="colorPicker" value="#ff0055">
+        </div>
+
+        <div class="control-group">
+            <label for="brushSize">Size</label>
+            <input type="range" id="brushSize" min="1" max="50" value="15">
+        </div>
+
+        <div class="control-group">
+            <label for="dripFactor">Drip</label>
+            <input type="range" id="dripFactor" min="0" max="100" value="30">
+        </div>
+
+        <div class="control-group">
+             <button id="clearBtn">Clear Wall</button>
+        </div>
+    </div>
+
+    <!-- Import Map for Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
