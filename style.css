@@ -132,6 +132,12 @@ a {
     display: inline-block;
 }
 
+/* Disabled State */
+.nav-link.disabled {
+    color: #999 !important;
+    cursor: not-allowed;
+}
+
 /* Active State */
 .nav-link.active,
 .tag-link.active {

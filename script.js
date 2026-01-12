@@ -27,15 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
             date: "2023-07-12",
             author: "Me",
             tech: "p5.js"
-        },
-        {
-            title: "More is More",
-            tag: "Generative",
-            category: "Posters",
-            url: "more-is-more/index.html",
-            date: "2023-10-27",
-            author: "Me",
-            tech: "p5.js"
         }
     ];
 
@@ -324,6 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
+            if (link.classList.contains('disabled')) return;
             navLinks.forEach(l => l.classList.remove('active'));
             e.target.classList.add('active');
 
