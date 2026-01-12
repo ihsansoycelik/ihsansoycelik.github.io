@@ -22,3 +22,9 @@ OSError: [Errno 98] Address already in use
 127.0.0.1 - - [12/Jan/2026 10:40:07] "GET /crt-simulation/index.html HTTP/1.1" 200 -
 127.0.0.1 - - [12/Jan/2026 10:40:07] "GET /crt-simulation/style.css HTTP/1.1" 200 -
 127.0.0.1 - - [12/Jan/2026 10:40:07] "GET /crt-simulation/script.js HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 23:32:07] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 23:32:07] "GET /script.js HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 23:32:07] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 23:32:08] "GET /crt-simulation/index.html HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 23:32:08] "GET /crt-simulation/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 23:32:08] "GET /crt-simulation/script.js HTTP/1.1" 200 -
