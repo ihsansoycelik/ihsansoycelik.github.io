@@ -122,10 +122,10 @@ function draw() {
   }
   
   // 3. Draw Kinetic Text
-  drawKineticText();
+  // drawKineticText(); // Removed as per request
   
   // 4. Draw Static UI Overlays (Corners)
-  drawStaticOverlays();
+  // drawStaticOverlays(); // Removed as per request
 }
 
 function drawKineticText() {
