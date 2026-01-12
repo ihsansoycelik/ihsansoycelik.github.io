@@ -16,7 +16,6 @@ body {
 
 canvas {
     display: block;
-    /* Optional: filter: blur(60px) contrast(1.2); */
     filter: none;
 }
 

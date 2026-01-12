@@ -1,0 +1,13 @@
+127.0.0.1 - - [12/Jan/2026 01:10:56] "GET /p5-js-1/index.html HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 01:10:56] "GET /p5-js-1/sketch.js HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 01:10:56] "GET /p5-js-1/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 01:10:57] "GET /p5-js-1/assets/PlayfairDisplay-Bold.ttf HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 01:10:57] "GET /p5-js-1/assets/Inter-Bold.ttf HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 01:12:22] "GET /p5-js-1/index.html HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 01:12:22] "GET /p5-js-1/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 01:12:22] "GET /p5-js-1/sketch.js HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 01:12:22] "GET /p5-js-1/assets/PlayfairDisplay-Bold.ttf HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 01:12:22] "GET /p5-js-1/assets/Inter-Bold.ttf HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 01:14:58] "GET /p5-js-1/index.html HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 01:14:58] "GET /p5-js-1/sketch.js HTTP/1.1" 200 -
+127.0.0.1 - - [12/Jan/2026 01:14:58] "GET /p5-js-1/style.css HTTP/1.1" 200 -
