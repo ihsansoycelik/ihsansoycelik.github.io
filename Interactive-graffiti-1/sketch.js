@@ -1,6 +1,7 @@
 // Global variables
 let pg; // Off-screen graphics buffer for static trails
 let drips = []; // Array to hold active Drip objects
+let splatters = []; // Array to hold splatter particles
 let uiFont;
 
 // UI State Variables
@@ -100,6 +101,7 @@ function setupUI() {
   bind('btn-clear', 'click', () => {
     pg.clear();
     drips = [];
+    splatters = [];
   });
 }
 
@@ -108,8 +110,14 @@ function draw() {
   
   // 1. Draw static buffer
   image(pg, 0, 0);
+
+  // 2. Draw splatters
+  for (let s of splatters) {
+    s.display(pg);
+  }
+  splatters = []; // Clear splatters after drawing them to the buffer to prevent re-drawing
   
-  // 2. Update and draw active drips
+  // 3. Update and draw active drips
   for (let i = drips.length - 1; i >= 0; i--) {
     let d = drips[i];
     d.update();
@@ -121,10 +129,10 @@ function draw() {
     }
   }
   
-  // 3. Draw Kinetic Text
+  // 4. Draw Kinetic Text
   // drawKineticText(); // Removed as per request
   
-  // 4. Draw Static UI Overlays (Corners)
+  // 5. Draw Static UI Overlays (Corners)
   // drawStaticOverlays(); // Removed as per request
 }
 
@@ -229,29 +237,58 @@ function mouseDragged(e) {
     strokeCol = textColor;
   }
 
-  // Draw Stroke
-  pg.stroke(strokeCol);
-  pg.strokeWeight(brushSize);
-  pg.strokeCap(ROUND);
-  pg.strokeJoin(ROUND);
-  pg.noFill();
-  pg.line(pmouseX, pmouseY, mouseX, mouseY);
-  
-  // Highlight
-  pg.stroke(255, 100);
-  pg.strokeWeight(brushSize * 0.3);
-  pg.line(pmouseX, pmouseY, mouseX, mouseY);
-  
-  // Spawn Drip
+  // --- New Brush Logic ---
+  pg.noStroke();
+
+  // Draw a fuzzy, spray-like line
+  let distance = dist(mouseX, mouseY, pmouseX, pmouseY);
+  let steps = max(1, distance / (brushSize * 0.2)); // Adjust step size based on brush size
+
+  for (let i = 0; i < steps; i++) {
+    let t = i / steps;
+    let x = lerp(pmouseX, mouseX, t);
+    let y = lerp(pmouseY, mouseY, t);
+
+    // Number of particles per step
+    let particleCount = 10;
+    for (let j = 0; j < particleCount; j++) {
+      let radius = random(0, brushSize / 2);
+      let angle = random(TWO_PI);
+      let particleX = x + cos(angle) * radius;
+      let particleY = y + sin(angle) * radius;
+
+      let particleColor = color(strokeCol);
+      // Fade out particles at the edge of the brush
+      let alpha = map(radius, 0, brushSize / 2, 50, 0, true);
+      particleColor.setAlpha(alpha);
+
+      pg.fill(particleColor);
+      pg.ellipse(particleX, particleY, random(2, 8), random(2, 8));
+    }
+  }
+
+  // Spawn Drip and Splatter
   let ms = dist(mouseX, mouseY, pmouseX, pmouseY);
   let safeSpeed = constrain(ms, 0.1, 50);
-  let intensity = map(safeSpeed, 0, 30, 1.0, 0.0, true);
-  let spawnChance = (intensity * 0.8) + 0.05;
   
-  if (random() < spawnChance) {
+  // Use a non-linear mapping for drip intensity.
+  // Drips are very likely at slow speeds, but the chance drops off sharply as speed increases.
+  let normSpeed = map(safeSpeed, 0, 30, 0, 1, true);
+  let intensity = 1.0 - pow(normSpeed, 3);
+
+  // Drip spawn
+  let dripSpawnChance = (intensity * 0.8) + 0.05;
+  if (random() < dripSpawnChance) {
     let jitterX = random(-brushSize * 0.2, brushSize * 0.2);
     let drip = new Drip(mouseX + jitterX, mouseY, strokeCol, brushSize, intensity);
     drips.push(drip);
+  }
+
+  // Splatter spawn (more likely with faster movement)
+  let splatterSpawnChance = map(safeSpeed, 10, 50, 0.0, 0.2, true);
+  if (random() < splatterSpawnChance) {
+    let splatter = new Splatter(mouseX, mouseY, strokeCol, brushSize, ms);
+    splatters.push(splatter);
   }
 }
 
@@ -310,6 +347,41 @@ class Drip {
     target.rect(this.x - highlightWidth/2 + this.highlightOffset, this.y, highlightWidth, this.len);
     target.ellipse(this.x + this.beadSize * 0.2, beadY - this.beadSize * 0.2, this.beadSize * 0.3, this.beadSize * 0.3);
     
+    target.pop();
+  }
+}
+
+// --- Splatter Class ---
+class Splatter {
+  constructor(x, y, col, brushSize, speed) {
+    this.x = x;
+    this.y = y;
+    this.col = col;
+    this.particles = [];
+
+    let numParticles = floor(random(5, 20));
+    let maxDist = brushSize * map(speed, 10, 50, 1, 3, true);
+
+    for (let i = 0; i < numParticles; i++) {
+      let angle = random(TWO_PI);
+      let dist = random(brushSize * 0.5, maxDist);
+      let particleX = this.x + cos(angle) * dist;
+      let particleY = this.y + sin(angle) * dist;
+      let particleSize = random(2, 6);
+      this.particles.push({ x: particleX, y: particleY, size: particleSize });
+    }
+  }
+
+  display(target) {
+    target.push();
+    target.noStroke();
+    let splatterColor = color(this.col);
+    splatterColor.setAlpha(150);
+    target.fill(splatterColor);
+
+    for (let p of this.particles) {
+      target.ellipse(p.x, p.y, p.size, p.size);
+    }
     target.pop();
   }
 }
