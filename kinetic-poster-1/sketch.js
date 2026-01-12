@@ -15,273 +15,32 @@ let params = {
   text: "Here\nComes\nThe\nBoat",
   bgColor: '#0022AA',
   textColor: '#E0E0E0',
+  // Animation
+  animType: 'Wave Y',
   freq: 0.08,
   amp: 20,
   speed: 0.05,
+  // Gradient
   useGradient: false,
   gradientColor1: '#FF0080',
   gradientColor2: '#FF8C00',
+  // Noise
   useNoise: false,
-  noiseIntensity: 50
+  noiseIntensity: 50,
+  noiseDensity: 1.0, // 0.1 - 1.0
+  noiseSize: 1.0, // Scale
+  noiseSpeed: 1 // Update every N frames (1 = every frame)
 };
 
-let noiseImage;
+let noiseBuffer;
 let fontLoaded = false;
 let setupComplete = false;
 
+// Animation Types
+const ANIM_TYPES = ['Wave Y', 'Wave X', 'Ripple', 'Stretch', 'Glitch', 'Breathing'];
+
 function setup() {
   try {
-    // Apple UI Style
-    let css = `
-      :root {
-        --bg-color: #1e1e1e;
-        --sidebar-bg: rgba(30, 30, 30, 0.9);
-        --section-bg: rgba(255, 255, 255, 0.05);
-        --text-color: #ffffff;
-        --accent-color: #007AFF;
-        --border-radius: 10px;
-      }
-      body {
-        margin: 0;
-        padding: 0;
-        background-color: #000;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        color: var(--text-color);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        width: 100vw;
-        overflow: hidden;
-      }
-      #main-container {
-        display: flex;
-        width: 100%;
-        height: 100%;
-      }
-      #canvas-container {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background: #0022AA;
-        position: relative;
-        overflow: hidden;
-      }
-      #sidebar {
-        width: 320px;
-        background: var(--sidebar-bg);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-left: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 20px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        flex-shrink: 0;
-        box-sizing: border-box;
-        z-index: 10;
-      }
-      .control-section {
-        background: var(--section-bg);
-        border-radius: var(--border-radius);
-        overflow: hidden;
-        transition: all 0.3s ease;
-      }
-      .section-header {
-        padding: 12px 14px;
-        font-weight: 500;
-        font-size: 13px;
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        user-select: none;
-        background: rgba(255, 255, 255, 0.02);
-        letter-spacing: 0.5px;
-      }
-      .section-header:hover {
-        background: rgba(255, 255, 255, 0.05);
-      }
-      .section-content {
-        padding: 14px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-      label {
-        font-size: 11px;
-        color: rgba(255, 255, 255, 0.5);
-        margin-bottom: 6px;
-        display: block;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-      textarea {
-        width: 100%;
-        background: rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 6px;
-        color: white;
-        padding: 8px;
-        font-family: inherit;
-        resize: vertical;
-        min-height: 60px;
-        box-sizing: border-box;
-      }
-      textarea:focus {
-        outline: none;
-        border-color: var(--accent-color);
-      }
-      input[type=range] {
-        -webkit-appearance: none;
-        width: 100%;
-        background: transparent;
-        margin: 0;
-      }
-      input[type=range]::-webkit-slider-runnable-track {
-        width: 100%;
-        height: 4px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 2px;
-      }
-      input[type=range]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        height: 16px;
-        width: 16px;
-        border-radius: 50%;
-        background: #fff;
-        margin-top: -6px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        cursor: pointer;
-      }
-      input[type=color] {
-        -webkit-appearance: none;
-        border: none;
-        width: 100%;
-        height: 28px;
-        border-radius: 6px;
-        background: none;
-        cursor: pointer;
-        padding: 0;
-      }
-      input[type=color]::-webkit-color-swatch-wrapper {
-        padding: 0;
-      }
-      input[type=color]::-webkit-color-swatch {
-        border: 1px solid rgba(255,255,255,0.2);
-        border-radius: 6px;
-      }
-      select {
-        width: 100%;
-        padding: 6px 8px;
-        background: rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 6px;
-        color: white;
-        -webkit-appearance: none;
-        font-size: 12px;
-      }
-      .toggle-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 4px;
-      }
-      .toggle-label {
-        font-size: 13px;
-        font-weight: 500;
-      }
-      /* Switch */
-      .switch {
-        position: relative;
-        display: inline-block;
-        width: 36px;
-        height: 20px;
-      }
-      .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-      }
-      .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: rgba(255, 255, 255, 0.2);
-        transition: .4s;
-        border-radius: 20px;
-      }
-      .slider:before {
-        position: absolute;
-        content: "";
-        height: 16px;
-        width: 16px;
-        left: 2px;
-        bottom: 2px;
-        background-color: white;
-        transition: .4s;
-        border-radius: 50%;
-      }
-      input:checked + .slider {
-        background-color: var(--accent-color);
-      }
-      input:checked + .slider:before {
-        transform: translateX(16px);
-      }
-      button.save-btn {
-        background: var(--accent-color);
-        color: white;
-        border: none;
-        padding: 10px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        width: 100%;
-        margin-top: 10px;
-        transition: opacity 0.2s;
-      }
-      button.save-btn:hover {
-        opacity: 0.9;
-      }
-      .arrow {
-        font-size: 10px;
-        opacity: 0.5;
-        transition: transform 0.2s;
-      }
-      .collapsed .arrow {
-        transform: rotate(-90deg);
-      }
-      .collapsed .section-content {
-        display: none;
-      }
-      /* Scrollbar */
-      #sidebar::-webkit-scrollbar {
-        width: 8px;
-      }
-      #sidebar::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      #sidebar::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 4px;
-      }
-      #sidebar::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.2);
-      }
-      
-      #defaultCanvas0 {
-        display: block !important;
-        visibility: visible !important;
-      }
-    `;
-    createElement('style', css);
-
     // Layout Containers
     let mainContainer = createDiv().id('main-container');
     let canvasContainer = createDiv().id('canvas-container').parent(mainContainer);
@@ -291,22 +50,19 @@ function setup() {
     let cnv = createCanvas(800, 800);
     cnv.parent(canvasContainer);
     cnv.id('defaultCanvas0');
-    cnv.style('max-width', '100%');
-    cnv.style('max-height', '100%');
-    cnv.style('object-fit', 'contain');
+    // Ensure canvas fits
+    // The CSS handles max-width/height, but p5 sets style width/height too.
+    // We let CSS override it via !important in index.html, or we can leave it.
 
     // Create UI - DO THIS BEFORE FONTS
     setupSidebar(sidebar);
     
     // Load fonts asynchronously
     for (let key in fontUrls) {
-      // We pass a callback to handle successful load
       loadFont(fontUrls[key], 
         (loadedFont) => {
           console.log(`Font ${key} loaded in setup`);
           fonts[key] = loadedFont;
-          
-          // If this is the current selected font, update immediately
           if (key === currentFontName) {
             currentFont = loadedFont;
             updateGeometry();
@@ -319,13 +75,56 @@ function setup() {
     }
 
     // Noise
-    createNoiseTexture();
+    initNoiseBuffer();
 
     setupComplete = true;
     
   } catch(e) {
     console.error("Setup error:", e);
   }
+}
+
+function initNoiseBuffer() {
+  // Create a buffer larger than canvas to allow for jitter/movement
+  // High res noise
+  let w = width + 200;
+  let h = height + 200;
+  noiseBuffer = createGraphics(w, h);
+  generateNoiseTexture();
+}
+
+function generateNoiseTexture() {
+  if (!noiseBuffer) return;
+  noiseBuffer.clear();
+  noiseBuffer.noStroke();
+
+  // High density random pixels
+  noiseBuffer.loadPixels();
+  let d = noiseBuffer.pixelDensity();
+  let fullW = noiseBuffer.width * d;
+  let fullH = noiseBuffer.height * d;
+
+  // We want strictly black/white noise usually, or grayscale.
+  // We'll write to alpha channel mostly for overlay?
+  // Or white pixels with alpha.
+
+  // Optimization: Loop through pixels
+  // Density affects how many pixels are opaque
+  let density = params.noiseDensity;
+
+  for (let i = 0; i < fullW * fullH * 4; i += 4) {
+    // fast random
+    if (Math.random() < density) {
+        let val = Math.random() * 255;
+        noiseBuffer.pixels[i] = val;     // R
+        noiseBuffer.pixels[i+1] = val;   // G
+        noiseBuffer.pixels[i+2] = val;   // B
+        noiseBuffer.pixels[i+3] = 255;   // A
+    } else {
+        noiseBuffer.pixels[i+3] = 0;     // Transparent
+    }
+  }
+  noiseBuffer.updatePixels();
 }
 
 function setupSidebar(sidebar) {
@@ -360,7 +159,6 @@ function setupSidebar(sidebar) {
   let bgPicker = createColorPicker(params.bgColor).parent(colorContent);
   bgPicker.input(() => {
     params.bgColor = bgPicker.value();
-    // Update container bg for seamlessness
     select('#canvas-container').style('background', params.bgColor);
   });
   
@@ -370,6 +168,16 @@ function setupSidebar(sidebar) {
 
   // Animation
   let animContent = createSection('Animation', sidebar, true);
+
+  // Type Selector
+  createSpan('Type').parent(animContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase');
+  let typeSelect = createSelect().parent(animContent);
+  ANIM_TYPES.forEach(t => typeSelect.option(t));
+  typeSelect.selected(params.animType);
+  typeSelect.changed(() => {
+    params.animType = typeSelect.value();
+  });
+
   function createSliderControl(label, min, max, val, step, parent, callback) {
     let wrap = createDiv().parent(parent);
     let lbl = createDiv(label).parent(wrap).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase').style('margin-bottom','4px');
@@ -377,9 +185,10 @@ function setupSidebar(sidebar) {
     sl.input(() => callback(sl.value()));
     return sl;
   }
-  createSliderControl("Frequency", 0.01, 0.2, params.freq, 0.01, animContent, v => params.freq = v);
-  createSliderControl("Amplitude", 0, 80, params.amp, 1, animContent, v => params.amp = v);
-  createSliderControl("Speed", 0.01, 0.2, params.speed, 0.01, animContent, v => params.speed = v);
+
+  createSliderControl("Frequency", 0.01, 0.5, params.freq, 0.01, animContent, v => params.freq = v);
+  createSliderControl("Amplitude", 0, 150, params.amp, 1, animContent, v => params.amp = v);
+  createSliderControl("Speed", 0.01, 0.5, params.speed, 0.01, animContent, v => params.speed = v);
 
   // Gradient
   let gradContent = createSection('Gradient Maps', sidebar, false);
@@ -429,7 +238,15 @@ function setupSidebar(sidebar) {
     params.useNoise = noiseInput.elt.checked;
   });
   createSpan().class('slider').parent(noiseSwitch);
+
   createSliderControl("Intensity", 0, 100, params.noiseIntensity, 1, noiseContent, v => params.noiseIntensity = v);
+  createSliderControl("Density", 0.1, 1.0, params.noiseDensity, 0.05, noiseContent, v => {
+    params.noiseDensity = v;
+    generateNoiseTexture();
+  });
+  createSliderControl("Size", 0.5, 4.0, params.noiseSize, 0.1, noiseContent, v => params.noiseSize = v);
+  // Speed is actually "Jitter Speed"
+  createSliderControl("Jitter Speed", 1, 10, 11 - params.noiseSpeed, 1, noiseContent, v => params.noiseSpeed = 11 - v); // Invert UI: Higher is faster (lower interval)
 
   // Save
   let saveBtn = createButton('Save Loop').class('save-btn').parent(sidebar);
@@ -443,10 +260,7 @@ function updateGeometry() {
 
 function generateGeometry() {
   fontData = [];
-  if (!currentFont) {
-    // console.warn("generateGeometry: No current font set.");
-    return;
-  }
+  if (!currentFont) return;
   
   let startY = 200;
   let totalH = textLines.length * fontSize;
@@ -459,10 +273,7 @@ function generateGeometry() {
     let b;
     try {
       b = currentFont.textBounds(str, 0, 0, fontSize);
-    } catch(e) {
-      console.warn("textBounds failed", e);
-      continue;
-    }
+    } catch(e) { continue; }
     
     let x = (800 / 2) - (b.w / 2);
     let y = startY + i * fontSize;
@@ -473,10 +284,7 @@ function generateGeometry() {
         sampleFactor: 0.25,
         simplifyThreshold: 0
       });
-    } catch(e) {
-      console.error("textToPoints failed", e);
-      continue;
-    }
+    } catch(e) { continue; }
     
     let lineContours = [];
     let currentContour = [];
@@ -521,18 +329,6 @@ function generateGeometry() {
   }
 }
 
-function createNoiseTexture() {
-  noiseImage = createImage(200, 200);
-  noiseImage.loadPixels();
-  for (let i = 0; i < 200; i++) {
-    for (let j = 0; j < 200; j++) {
-      let val = random(255);
-      noiseImage.set(i, j, color(val, val, val, 40));
-    }
-  }
-  noiseImage.updatePixels();
-}
-
 function draw() {
   try {
     background(params.bgColor);
@@ -571,8 +367,42 @@ function draw() {
           beginShape();
           for (let k = 0; k < contour.length; k++) {
             let p = contour[k];
-            let wave = sin(p.y * params.freq + frameCount * params.speed) * params.amp;
-            vertex(p.x + wave, p.y);
+            let nx = p.x;
+            let ny = p.y;
+
+            // Apply Animation
+            let t = frameCount * params.speed;
+
+            switch(params.animType) {
+              case 'Wave Y':
+                nx += sin(p.y * params.freq + t) * params.amp;
+                break;
+              case 'Wave X':
+                ny += sin(p.x * params.freq + t) * params.amp;
+                break;
+              case 'Ripple':
+                let d = dist(p.x, p.y, width/2, height/2);
+                nx += sin(d * params.freq - t) * params.amp;
+                break;
+              case 'Stretch':
+                // Stretch from center vertically
+                let cy = height/2;
+                let dy = (p.y - cy);
+                ny = cy + dy * (1 + sin(t * 0.5) * (params.amp/100)); // normalized amp
+                break;
+              case 'Glitch':
+                if (frameCount % 10 < 5) { // Stutter
+                   if (random() < 0.1) nx += random(-params.amp, params.amp);
+                }
+                break;
+              case 'Breathing':
+                 let scaleF = 1 + sin(t) * (params.amp/200);
+                 nx = (nx - width/2) * scaleF + width/2;
+                 ny = (ny - height/2) * scaleF + height/2;
+                 break;
+            }
+
+            vertex(nx, ny);
           }
           endShape(CLOSE);
         }
@@ -581,12 +411,51 @@ function draw() {
     
     drawUI();
 
-    if (params.useNoise) {
+    if (params.useNoise && noiseBuffer) {
       push();
       blendMode(OVERLAY);
       tint(255, map(params.noiseIntensity, 0, 100, 0, 255));
-      image(noiseImage, 0, 0, width, height);
+
+      // Animated Grain: Randomize position
+      let ox = 0, oy = 0;
+      // Update offset every N frames
+      if (frameCount % Math.max(1, floor(params.noiseSpeed)) === 0) {
+        // We use random noise offset
+        // But to make it continuous we need to store it?
+        // No, grain is usually random every frame.
+      }
+
+      // We draw the noise buffer shifted by a random amount
+      // The buffer is larger than canvas, so we can shift it.
+      // Max shift = 200
+
+      // If speed is high (interval low), we shift often.
+      // Wait, params.noiseSpeed I defined as "Update every N frames".
+      // Let's use noiseSeed or just random.
+
+      let speedInterval = Math.max(1, floor(params.noiseSpeed));
+      let frameKey = floor(frameCount / speedInterval);
+
+      randomSeed(frameKey * 12345);
+      ox = random(-200, 0);
+      oy = random(-200, 0);
+
+      // Scale
+      let s = params.noiseSize;
+
+      translate(ox, oy);
+      scale(s);
+
+      // If we scale up, we need to ensure we cover the canvas.
+      // noiseBuffer is w+200, h+200.
+      // if scale is 1, we draw at -200..0. covers width.
+      // if scale is 2, we draw huge image.
+
+      image(noiseBuffer, 0, 0);
+
       pop();
+      // restore random seed for other things? p5 random is global.
+      randomSeed(frameCount);
     }
   } catch(e) {
     console.error(e);
