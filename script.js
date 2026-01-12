@@ -2,15 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Data Management: Constant array of projects
     const projects = [
         {
-            title: "p5-js-1",
-            tag: "P5.js",
-            category: "all",
-            url: "p5-js-1/index.html",
-            date: "2023-10-15",
-            author: "Me",
-            tech: "p5.js"
-        },
-        {
             title: "Kinetic-Poster-1",
             tag: "Generative",
             category: "Posters",
