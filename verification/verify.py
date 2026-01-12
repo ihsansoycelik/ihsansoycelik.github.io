@@ -6,15 +6,24 @@ def run():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        # Open the local file directly
-        file_path = os.path.abspath("more-is-more/index.html")
-        page.goto(f"file://{file_path}")
 
-        # Wait a bit for the animation to start and canvas to be ready
-        page.wait_for_timeout(1000)
+        # Load the file locally
+        # Assuming the script runs from root
+        cwd = os.getcwd()
+        file_path = f"file://{cwd}/more-is-more/index.html"
 
-        # Take screenshot
-        page.screenshot(path="verification/screenshot.png")
+        print(f"Navigating to: {file_path}")
+        page.goto(file_path)
+
+        # Wait for the canvas to load and the animation to run a bit
+        # 60 layers at 60fps, let's wait a second to let it stabilize and swing
+        page.wait_for_timeout(2000)
+
+        # Screenshot
+        screenshot_path = "verification/screenshot.png"
+        page.screenshot(path=screenshot_path)
+        print(f"Screenshot saved to {screenshot_path}")
+
         browser.close()
 
 if __name__ == "__main__":

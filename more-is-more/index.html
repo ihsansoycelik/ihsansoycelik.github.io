@@ -1,23 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>More is More</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #F0313C; /* Match canvas background */
-        }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>More is More - Kinetic Typography</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <script src="sketch.js"></script>
+
+  <div id="app-container">
+    <div id="canvas-container"></div>
+
+    <div id="controls">
+      <h2>Controls</h2>
+
+      <!-- Canvas Settings -->
+      <div class="control-section">
+        <h3>Canvas</h3>
+        <div class="control-row">
+          <label>Background</label>
+          <input type="color" id="col-bg" value="#F0313C">
+        </div>
+      </div>
+
+      <!-- Text Settings -->
+      <div class="control-section">
+        <h3>Typography</h3>
+        <div class="control-row">
+            <label>Face Color</label>
+            <input type="color" id="col-face" value="#FFFFFF">
+        </div>
+        <div class="control-row">
+            <label>Font Size</label>
+            <input type="range" id="val-text-size" min="100" max="300" value="240">
+        </div>
+      </div>
+
+      <!-- Trail / Motion Settings -->
+      <div class="control-section">
+        <h3>Trail & Motion</h3>
+        <div class="control-row">
+            <label>Depth (Layers)</label>
+            <input type="range" id="val-depth" min="0" max="100" value="60">
+        </div>
+        <div class="control-row">
+            <label>Offset X</label>
+            <input type="range" id="val-offset-x" min="-50" max="50" value="0">
+        </div>
+        <div class="control-row">
+            <label>Offset Y</label>
+            <input type="range" id="val-offset-y" min="-50" max="50" value="0">
+        </div>
+        <div class="control-row">
+            <label>Motion Speed</label>
+            <input type="range" id="val-speed" min="0" max="0.2" step="0.001" value="0.08">
+        </div>
+        <div class="control-row">
+            <label>Motion Range</label>
+            <input type="range" id="val-range" min="0" max="150" value="85">
+        </div>
+      </div>
+
+      <!-- Colors -->
+      <div class="control-section">
+        <h3>Trail Colors</h3>
+        <div class="control-row">
+            <label>Highlight Start</label>
+            <input type="color" id="col-highlight-start" value="#2B3FD4">
+        </div>
+        <div class="control-row">
+            <label>Highlight End</label>
+            <input type="color" id="col-highlight-end" value="#1a2680">
+        </div>
+        <div class="control-row">
+            <label>Base Start</label>
+            <input type="color" id="col-base-start" value="#dddddd">
+        </div>
+        <div class="control-row">
+            <label>Base End</label>
+            <input type="color" id="col-base-end" value="#999999">
+        </div>
+      </div>
+
+       <!-- Grain -->
+       <div class="control-section">
+        <div class="section-header">
+            <h3>Grain Overlay</h3>
+            <label class="toggle-switch">
+              <input type="checkbox" id="grain-enabled" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        <div class="control-row">
+            <label>Amount</label>
+            <input type="range" id="val-grain" min="0" max="100" value="15">
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="sketch.js"></script>
 </body>
 </html>
