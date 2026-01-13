@@ -58,9 +58,18 @@ float noise(vec2 st) {
 // Barrel Distortion
 vec2 curve(vec2 uv) {
     vec2 centered = uv * 2.0 - 1.0;
-    vec2 offset = centered.yx / 5.0; // Aspect ratio fix roughly
-    centered = centered + centered * dot(centered, centered) * uCurve;
-    return centered * 0.5 + 0.5;
+
+    // Correct for aspect ratio to ensure circular distortion
+    float aspect = uResolution.x / uResolution.y;
+
+    // Calculate distance from center in "square" pixel space
+    vec2 aspectCorrected = centered;
+    aspectCorrected.x *= aspect;
+
+    float distSq = dot(aspectCorrected, aspectCorrected);
+    float distortion = 1.0 + distSq * uCurve;
+
+    return centered * distortion * 0.5 + 0.5;
 }
 
 // Magnetic Interference
