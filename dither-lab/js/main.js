@@ -13,15 +13,11 @@ let processTimeout;
 document.addEventListener('DOMContentLoaded', () => {
     initUI();
     initRenderer(document.getElementById('dither-canvas'));
-    initExport(state);
 
-    initWorker((result) => {
-        // Worker Finished
-        const data = new Uint8Array(result.buffer);
-        loadTexture(data, result.width, result.height);
-        render(state, true); // Render with Bypass Shader
-        document.getElementById('loading-indicator').classList.add('hidden');
-    });
+    // Initialize export logic
+    initExport(state, handleWorkerResult);
+
+    initWorker(handleWorkerResult);
 
     // Subscribe to state changes
     subscribe((newState) => {
@@ -31,6 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial Render Loop
     requestAnimationFrame(loop);
 });
+
+export function handleWorkerResult(result) {
+    // Worker Finished
+    const data = new Uint8Array(result.buffer);
+    loadTexture(data, result.width, result.height);
+    render(state, true); // Render with Bypass Shader
+    document.getElementById('loading-indicator').classList.add('hidden');
+}
 
 function handleStateChange(newState) {
     const algo = newState.settings.algorithm;
