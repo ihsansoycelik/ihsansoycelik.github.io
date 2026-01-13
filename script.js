@@ -316,8 +316,12 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             if (link.classList.contains('disabled')) return;
-            navLinks.forEach(l => l.classList.remove('active'));
+            navLinks.forEach(l => {
+                l.classList.remove('active');
+                l.removeAttribute('aria-current');
+            });
             e.target.classList.add('active');
+            e.target.setAttribute('aria-current', 'page');
 
             if (e.target.dataset.filter === 'all') {
                 currentCategory = 'all';
@@ -335,8 +339,12 @@ document.addEventListener('DOMContentLoaded', () => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
 
-            tagLinks.forEach(l => l.classList.remove('active'));
+            tagLinks.forEach(l => {
+                l.classList.remove('active');
+                l.removeAttribute('aria-current');
+            });
             e.target.classList.add('active');
+            e.target.setAttribute('aria-current', 'page');
             currentTag = e.target.dataset.tag;
 
             filterProjects();
