@@ -7,6 +7,7 @@ let uiFont;
 let contentText = "Here\nComes\nThe\nBoat";
 let selectedFont = "Inter";
 let bgColor;
+let bgImage; // Background image variable
 let textColor;
 let animFreq = 0.2;
 let animAmp = 20;
@@ -68,6 +69,16 @@ function setupUI() {
     bgColor = color(e.target.value);
     document.getElementById('bg-preview').style.backgroundColor = e.target.value;
   });
+
+  bind('bg-image-upload', 'change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      loadImage(url, (img) => {
+        bgImage = img;
+      });
+    }
+  });
   
   bind('text-color-picker', 'input', (e) => {
     textColor = color(e.target.value);
@@ -105,6 +116,16 @@ function setupUI() {
 
 function draw() {
   background(bgColor);
+
+  // Draw background image if available
+  if (bgImage) {
+    let scale = Math.max(width / bgImage.width, height / bgImage.height);
+    let w = bgImage.width * scale;
+    let h = bgImage.height * scale;
+    let x = (width - w) / 2;
+    let y = (height - h) / 2;
+    image(bgImage, x, y, w, h);
+  }
   
   // 1. Draw static buffer
   image(pg, 0, 0);
