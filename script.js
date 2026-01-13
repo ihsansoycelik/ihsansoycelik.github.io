@@ -356,4 +356,34 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         drawLines();
     }, 100);
+
+    // --- Grain Implementation ---
+    // Settings mimicking kinetic-poster-2 structure
+    const grainConfig = {
+        amount: 0.16,       // Approx 40/255
+        frequency: 0.8,     // Base frequency
+        blendMode: 'multiply', // 'overlay' equivalent for Light Mode
+        animated: true
+    };
+
+    const grainOverlay = document.getElementById('grain-overlay');
+    const turbulence = document.getElementById('turbulence');
+
+    if (grainOverlay && turbulence) {
+        // Apply Settings
+        grainOverlay.style.opacity = grainConfig.amount;
+        grainOverlay.style.mixBlendMode = grainConfig.blendMode;
+        turbulence.setAttribute('baseFrequency', grainConfig.frequency);
+
+        // Animation
+        if (grainConfig.animated) {
+            let seed = 0;
+            function animateGrain() {
+                seed = (seed + 1) % 1000;
+                turbulence.setAttribute('seed', seed);
+                requestAnimationFrame(animateGrain);
+            }
+            animateGrain();
+        }
+    }
 });
