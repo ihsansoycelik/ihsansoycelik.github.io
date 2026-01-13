@@ -1,7 +1,11 @@
 // Export Functionality
-import { processImageCPU } from './worker-bridge.js';
+import { processImageCPU, setOnResultListener } from './worker-bridge.js';
+import { render, loadTexture } from './gl-renderer.js';
 
-export function initExport(state) {
+let restoreWorkerCallback;
+
+export function initExport(state, originalWorkerCallback) {
+    restoreWorkerCallback = originalWorkerCallback;
     const btn = document.getElementById('btn-export');
     btn.addEventListener('click', () => handleExport(state));
 }
@@ -14,7 +18,12 @@ function handleExport(state) {
     }
 
     if (state.image.type === 'video') {
-        exportVideo(canvas, state);
+        const choice = confirm("Export Mode:\nOK - Offline Render (Best Quality, Slow)\nCancel - Real-time Record (Fast, may skip frames)");
+        if (choice) {
+            exportVideoOffline(state);
+        } else {
+            exportVideoRealtime(canvas, state);
+        }
     } else {
         // Image Export
         const link = document.createElement('a');
@@ -24,15 +33,7 @@ function handleExport(state) {
     }
 }
 
-function exportVideo(canvas, state) {
-    // Attempt frame-by-frame processing if CPU algorithm is selected
-    // Note: This is complex because we need to sync video playback with frame capture and processing.
-    // Given the constraints, we will use the existing recording method which captures the Canvas stream.
-    // If the user wants CPU dithering on video, they see a static/low-fps preview or "None".
-    // Improving this to be perfect offline rendering is a huge task involving ffmpeg.wasm.
-
-    // We will stick to MediaRecorder but add a notification.
-
+function exportVideoRealtime(canvas, state) {
     const isCPU = !state.settings.algorithm.startsWith('bayer') &&
                   !state.settings.algorithm.includes('noise');
 
@@ -66,4 +67,122 @@ function exportVideo(canvas, state) {
         recorder.stop();
         video.onended = null;
     };
+}
+
+async function exportVideoOffline(state) {
+    const { FFmpeg } = window.FFmpeg;
+    const { fetchFile, toBlobURL } = window.FFmpegUtil;
+
+    const ffmpeg = new FFmpeg();
+    const video = state.image.source;
+    const canvas = document.getElementById('dither-canvas');
+    const loading = document.getElementById('loading-indicator');
+    const loadingText = loading.querySelector('.loading-text');
+
+    loading.classList.remove('hidden');
+    video.pause();
+
+    try {
+        loadingText.innerText = "Loading FFmpeg...";
+        // Load FFmpeg
+        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+        await ffmpeg.load({
+            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        });
+
+        const fps = 30; // Target FPS
+        const duration = video.duration;
+        const totalFrames = Math.floor(duration * fps);
+        const isCPU = !state.settings.algorithm.startsWith('bayer') &&
+                      !state.settings.algorithm.includes('noise');
+
+        // Prepare for offline rendering
+        video.currentTime = 0;
+
+        for (let i = 0; i < totalFrames; i++) {
+            loadingText.innerText = `Rendering Frame ${i + 1}/${totalFrames}`;
+
+            // Seek to frame
+            video.currentTime = i / fps;
+            await new Promise(r => {
+                const onSeek = () => {
+                    video.removeEventListener('seeked', onSeek);
+                    r();
+                };
+                video.addEventListener('seeked', onSeek);
+            });
+
+            // Process Frame
+            if (isCPU) {
+                // Ensure texture is updated for "source" reads if needed,
+                // but processImageCPU reads directly from video element which is updated by seek
+                await new Promise(resolve => {
+                    setOnResultListener((result) => {
+                         // Update texture with result so we can draw it to canvas
+                         const data = new Uint8Array(result.buffer);
+                         loadTexture(data, result.width, result.height);
+                         render(state, true); // Render with bypass
+                         resolve();
+                    });
+                    processImageCPU(state);
+                });
+            } else {
+                // GPU: Update texture from video and render
+                loadTexture(video);
+                render(state);
+                // Wait for GPU to finish? usually sync enough for toBlob
+            }
+
+            // Capture Frame
+            const frameBlob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+            const frameData = await fetchFile(frameBlob);
+            await ffmpeg.writeFile(`input_${i}.png`, frameData);
+        }
+
+        loadingText.innerText = "Encoding Video...";
+
+        // Encode video
+        // -r 30: input framerate
+        // -i input_%d.png: input pattern
+        // -c:v libx264: codec
+        // -pix_fmt yuv420p: compatibility
+        await ffmpeg.exec([
+            '-framerate', `${fps}`,
+            '-i', 'input_%d.png',
+            '-c:v', 'libx264',
+            '-pix_fmt', 'yuv420p',
+            'output.mp4'
+        ]);
+
+        const data = await ffmpeg.readFile('output.mp4');
+        const url = URL.createObjectURL(new Blob([data.buffer], { type: 'video/mp4' }));
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'dither-lab-render.mp4';
+        link.click();
+
+        // Cleanup
+        /*
+        for (let i = 0; i < totalFrames; i++) {
+            await ffmpeg.deleteFile(`input_${i}.png`);
+        }
+        await ffmpeg.deleteFile('output.mp4');
+        */
+
+    } catch (e) {
+        console.error(e);
+        alert("Export failed: " + e.message);
+    } finally {
+        loading.classList.add('hidden');
+        loadingText.innerText = "Processing...";
+
+        // Restore state
+        if (restoreWorkerCallback) {
+            setOnResultListener(restoreWorkerCallback);
+        }
+        video.loop = true;
+        video.play();
+    }
 }

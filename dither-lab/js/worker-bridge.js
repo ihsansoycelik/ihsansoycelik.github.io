@@ -15,6 +15,10 @@ export function initWorker(onResult) {
     };
 }
 
+export function setOnResultListener(listener) {
+    onResultCallback = listener;
+}
+
 export function processImageCPU(state) {
     if (!worker || !state.image.source) return;
 
