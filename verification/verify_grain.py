@@ -16,8 +16,8 @@ def verify_grain():
         page.wait_for_timeout(1000)
 
         # Take screenshot
-        page.screenshot(path="verification/grain_after.png")
-        print("Screenshot saved to verification/grain_after.png")
+        page.screenshot(path="verification/grain_fix.png")
+        print("Screenshot saved to verification/grain_fix.png")
 
         browser.close()
 
