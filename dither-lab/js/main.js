@@ -223,10 +223,20 @@ function loop() {
          // Always render video frames using GPU (fallback to Bayer/None if CPU algo selected)
          loadTexture(state.image.source);
 
-         // If CPU algo selected, force shader bypass or fallback to ordered?
-         // Let's force fallback to Bayer for video in this demo
+         // If CPU algo selected, force fallback to ordered (Bayer)
          // because CPU dithering 30fps video is impossible in JS main thread
-         render(state, false);
+         const isCPU = CPU_ALGOS.includes(state.settings.algorithm);
+         let renderState = state;
+         if (isCPU) {
+             renderState = {
+                 ...state,
+                 settings: {
+                     ...state.settings,
+                     algorithm: 'bayer-4'
+                 }
+             };
+         }
+         render(renderState, false);
          return;
     }
 
