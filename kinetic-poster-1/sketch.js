@@ -10,9 +10,11 @@ let fontUrls = {
 };
 let currentFontName = 'Rubik Mono One';
 let currentFont;
+let uiControls = {};
 
-let params = {
+let defaultParams = {
   text: "Here\nComes\nThe\nBoat",
+  fontName: 'Rubik Mono One',
   bgColor: '#0022AA',
   textColor: '#E0E0E0',
   freq: 0.08,
@@ -24,6 +26,8 @@ let params = {
   useNoise: false,
   noiseIntensity: 50
 };
+
+let params = { ...defaultParams };
 
 let noiseImage;
 let fontLoaded = false;
@@ -249,6 +253,9 @@ function setup() {
       button.save-btn:hover {
         opacity: 0.9;
       }
+      button.reset-btn {
+        background: #555;
+      }
       .arrow {
         font-size: 10px;
         opacity: 0.5;
@@ -333,10 +340,10 @@ function setupSidebar(sidebar) {
   let textSection = createDiv().class('control-section').parent(sidebar);
   let textContent = createDiv().class('section-content').parent(textSection);
   createSpan('Content').parent(textContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase').style('margin-bottom','4px');
-  let txtArea = createElement('textarea', params.text).parent(textContent);
-  txtArea.attribute('rows', '4');
-  txtArea.input(() => {
-    params.text = txtArea.value();
+  uiControls.txtArea = createElement('textarea', params.text).parent(textContent);
+  uiControls.txtArea.attribute('rows', '4');
+  uiControls.txtArea.input(() => {
+    params.text = uiControls.txtArea.value();
     updateGeometry();
   });
 
@@ -357,61 +364,61 @@ function setupSidebar(sidebar) {
   // Color
   let colorContent = createSection('Color', sidebar, true);
   createSpan('Background').parent(colorContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase');
-  let bgPicker = createColorPicker(params.bgColor).parent(colorContent);
-  bgPicker.input(() => {
-    params.bgColor = bgPicker.value();
+  uiControls.bgPicker = createColorPicker(params.bgColor).parent(colorContent);
+  uiControls.bgPicker.input(() => {
+    params.bgColor = uiControls.bgPicker.value();
     // Update container bg for seamlessness
     select('#canvas-container').style('background', params.bgColor);
   });
   
   createSpan('Text').parent(colorContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase').style('margin-top','8px');
-  let textPicker = createColorPicker(params.textColor).parent(colorContent);
-  textPicker.input(() => params.textColor = textPicker.value());
+  uiControls.textPicker = createColorPicker(params.textColor).parent(colorContent);
+  uiControls.textPicker.input(() => params.textColor = uiControls.textPicker.value());
 
   // Animation
   let animContent = createSection('Animation', sidebar, true);
-  function createSliderControl(label, min, max, val, step, parent, callback) {
+  function createSliderControl(label, key, min, max, val, step, parent, callback) {
     let wrap = createDiv().parent(parent);
     let lbl = createDiv(label).parent(wrap).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase').style('margin-bottom','4px');
-    let sl = createSlider(min, max, val, step).parent(wrap);
-    sl.input(() => callback(sl.value()));
-    return sl;
+    uiControls[key] = createSlider(min, max, val, step).parent(wrap);
+    uiControls[key].input(() => callback(uiControls[key].value()));
+    return uiControls[key];
   }
-  createSliderControl("Frequency", 0.01, 0.2, params.freq, 0.01, animContent, v => params.freq = v);
-  createSliderControl("Amplitude", 0, 80, params.amp, 1, animContent, v => params.amp = v);
-  createSliderControl("Speed", 0.01, 0.2, params.speed, 0.01, animContent, v => params.speed = v);
+  createSliderControl("Frequency", "freqSlider", 0.01, 0.2, params.freq, 0.01, animContent, v => params.freq = v);
+  createSliderControl("Amplitude", "ampSlider", 0, 80, params.amp, 1, animContent, v => params.amp = v);
+  createSliderControl("Speed", "speedSlider", 0.01, 0.2, params.speed, 0.01, animContent, v => params.speed = v);
 
   // Gradient
   let gradContent = createSection('Gradient Maps', sidebar, false);
   let gradToggleRow = createDiv().class('toggle-row').parent(gradContent);
   createSpan('Enabled').class('toggle-label').parent(gradToggleRow);
   let gradSwitch = createElement('label').class('switch').parent(gradToggleRow);
-  let gradInput = createElement('input');
-  gradInput.attribute('type', 'checkbox');
-  if (params.useGradient) gradInput.attribute('checked', '');
-  gradInput.parent(gradSwitch);
-  gradInput.changed(() => {
-    params.useGradient = gradInput.elt.checked;
+  uiControls.gradInput = createElement('input');
+  uiControls.gradInput.attribute('type', 'checkbox');
+  if (params.useGradient) uiControls.gradInput.attribute('checked', '');
+  uiControls.gradInput.parent(gradSwitch);
+  uiControls.gradInput.changed(() => {
+    params.useGradient = uiControls.gradInput.elt.checked;
   });
   createSpan().class('slider').parent(gradSwitch);
   
   createSpan('Start Color').parent(gradContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase');
-  let g1Picker = createColorPicker(params.gradientColor1).parent(gradContent);
-  g1Picker.input(() => params.gradientColor1 = g1Picker.value());
+  uiControls.g1Picker = createColorPicker(params.gradientColor1).parent(gradContent);
+  uiControls.g1Picker.input(() => params.gradientColor1 = uiControls.g1Picker.value());
   
   createSpan('End Color').parent(gradContent).style('font-size','11px').style('opacity','0.5').style('text-transform','uppercase').style('margin-top','8px');
-  let g2Picker = createColorPicker(params.gradientColor2).parent(gradContent);
-  g2Picker.input(() => params.gradientColor2 = g2Picker.value());
+  uiControls.g2Picker = createColorPicker(params.gradientColor2).parent(gradContent);
+  uiControls.g2Picker.input(() => params.gradientColor2 = uiControls.g2Picker.value());
 
   // Typography
   let fontContent = createSection('Typography', sidebar, false);
-  let fontSelect = createSelect().parent(fontContent);
+  uiControls.fontSelect = createSelect().parent(fontContent);
   for (let f in fontUrls) {
-    fontSelect.option(f);
+    uiControls.fontSelect.option(f);
   }
-  fontSelect.selected(currentFontName);
-  fontSelect.changed(() => {
-    currentFontName = fontSelect.value();
+  uiControls.fontSelect.selected(currentFontName);
+  uiControls.fontSelect.changed(() => {
+    currentFontName = uiControls.fontSelect.value();
     currentFont = fonts[currentFontName];
     updateGeometry();
   });
@@ -421,19 +428,46 @@ function setupSidebar(sidebar) {
   let noiseToggleRow = createDiv().class('toggle-row').parent(noiseContent);
   createSpan('Enabled').class('toggle-label').parent(noiseToggleRow);
   let noiseSwitch = createElement('label').class('switch').parent(noiseToggleRow);
-  let noiseInput = createElement('input');
-  noiseInput.attribute('type', 'checkbox');
-  if (params.useNoise) noiseInput.attribute('checked', '');
-  noiseInput.parent(noiseSwitch);
-  noiseInput.changed(() => {
-    params.useNoise = noiseInput.elt.checked;
+  uiControls.noiseInput = createElement('input');
+  uiControls.noiseInput.attribute('type', 'checkbox');
+  if (params.useNoise) uiControls.noiseInput.attribute('checked', '');
+  uiControls.noiseInput.parent(noiseSwitch);
+  uiControls.noiseInput.changed(() => {
+    params.useNoise = uiControls.noiseInput.elt.checked;
   });
   createSpan().class('slider').parent(noiseSwitch);
-  createSliderControl("Intensity", 0, 100, params.noiseIntensity, 1, noiseContent, v => params.noiseIntensity = v);
+  createSliderControl("Intensity", "noiseIntensitySlider", 0, 100, params.noiseIntensity, 1, noiseContent, v => params.noiseIntensity = v);
 
   // Save
   let saveBtn = createButton('Save Loop').class('save-btn').parent(sidebar);
   saveBtn.mousePressed(saveLoop);
+
+  let resetBtn = createButton('Reset').class('save-btn reset-btn').parent(sidebar);
+  resetBtn.mousePressed(resetParams);
+}
+
+function resetParams() {
+  params = { ...defaultParams };
+
+  // Update UI elements
+  uiControls.txtArea.value(params.text);
+  uiControls.bgPicker.value(params.bgColor);
+  uiControls.textPicker.value(params.textColor);
+  uiControls.freqSlider.value(params.freq);
+  uiControls.ampSlider.value(params.amp);
+  uiControls.speedSlider.value(params.speed);
+  uiControls.gradInput.elt.checked = params.useGradient;
+  uiControls.g1Picker.value(params.gradientColor1);
+  uiControls.g2Picker.value(params.gradientColor2);
+  uiControls.fontSelect.selected(defaultParams.fontName || 'Rubik Mono One');
+  uiControls.noiseInput.elt.checked = params.useNoise;
+  uiControls.noiseIntensitySlider.value(params.noiseIntensity);
+
+  // Trigger updates
+  select('#canvas-container').style('background', params.bgColor);
+  currentFontName = defaultParams.fontName || 'Rubik Mono One';
+  currentFont = fonts[currentFontName];
+  updateGeometry();
 }
 
 function updateGeometry() {
