@@ -36,9 +36,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const gridContainer = document.querySelector('.grid-container');
     const projectFrame = document.getElementById('project-frame');
     const projectViewer = document.getElementById('project-viewer');
+    const loadingSpinner = document.getElementById('loading-spinner');
 
     // Iframe Auto-Resize Logic
     projectFrame.addEventListener('load', () => {
+        // Hide spinner when loaded
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+
         try {
             const iframeDoc = projectFrame.contentDocument || projectFrame.contentWindow.document;
             if (iframeDoc) {
@@ -87,6 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const url = project.url;
 
                 if (url && url !== '#' && url !== '') {
+                    // Show spinner
+                    if (loadingSpinner) loadingSpinner.style.display = 'block';
+
                     projectFrame.src = url;
                     projectFrame.style.display = 'block';
 
