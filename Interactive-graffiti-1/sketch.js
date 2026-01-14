@@ -31,6 +31,7 @@ function setup() {
   
   // Default Colors
   bgColor = color('#0022AA'); // Deep Blue
+  document.body.style.backgroundColor = bgColor.toString();
   textColor = color('#FFFFFF'); // White
   
   // Create off-screen buffer
@@ -68,6 +69,7 @@ function setupUI() {
   // Colors
   bind('bg-color-picker', 'input', (e) => {
     bgColor = color(e.target.value);
+    document.body.style.backgroundColor = e.target.value;
     document.getElementById('bg-preview').style.backgroundColor = e.target.value;
   });
 

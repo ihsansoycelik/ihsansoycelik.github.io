@@ -59,6 +59,7 @@ const sketch = (p) => {
     cnv.parent(canvasContainer);
 
     setupSidebar(sidebar);
+    document.body.style.backgroundColor = params.bgColor;
     
     for (let key in fontUrls) {
       p.loadFont(fontUrls[key], (loadedFont) => {
@@ -192,5 +193,6 @@ const sketch = (p) => {
 
   p.remove = () => {
       mainContainer.remove();
+      document.body.style.backgroundColor = '#111';
   }
 };
