@@ -27,6 +27,15 @@ document.addEventListener('DOMContentLoaded', () => {
             date: "2023-07-12",
             author: "Me",
             tech: "p5.js"
+        },
+        {
+            title: "Interactive 3D",
+            tag: "Interaction",
+            category: "Posters",
+            url: "interactive-3d-portfolio/index.html",
+            date: "2023-10-27",
+            author: "Me",
+            tech: "Three.js"
         }
     ];
 
