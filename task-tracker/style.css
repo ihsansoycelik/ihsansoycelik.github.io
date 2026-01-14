@@ -1,3 +1,14 @@
+:root {
+    --sidebar-bg: rgba(30, 30, 30, 0.6);
+    --sidebar-border: rgba(255, 255, 255, 0.1);
+    --item-hover: rgba(255, 255, 255, 0.05);
+    --item-active: rgba(255, 255, 255, 0.15);
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.55);
+    --accent: #0A84FF;
+    --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -5,58 +16,155 @@
 }
 
 body {
-    background-color: #f0f0f0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-stack);
+    background: #1e1e1e; /* Fallback */
+    /* Sequoia-like abstract background */
+    background: radial-gradient(circle at 0% 0%, #4a2f46 0%, #1e1e1e 40%),
+                radial-gradient(circle at 100% 100%, #1c2e4a 0%, #1e1e1e 40%);
+    color: var(--text-primary);
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.app-container {
     display: flex;
-    justify-content: center;
-    padding-top: 50px;
+    height: 100%;
+    width: 100%;
 }
 
-.menu-container {
-    display: inline-block;
-}
-
-.task-menu {
-    background-color: #666;
-    border-radius: 20px;
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-.menu-item {
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    background: var(--sidebar-bg);
+    backdrop-filter: blur(25px) saturate(120%);
+    -webkit-backdrop-filter: blur(25px) saturate(120%);
+    border-right: 1px solid var(--sidebar-border);
     display: flex;
     flex-direction: column;
+    padding: 20px 16px;
+    flex-shrink: 0;
+}
+
+.sidebar-header {
+    margin-bottom: 20px;
+    padding: 0 12px;
+}
+
+.sidebar-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.task-item {
+    display: flex;
     align-items: center;
-    justify-content: center;
+    padding: 8px 12px;
+    border-radius: 6px;
     text-decoration: none;
-    color: white;
-    padding: 12px 24px;
-    border-radius: 14px;
-    transition: background-color 0.2s ease;
+    color: var(--text-secondary);
+    transition: background-color 0.15s ease, color 0.15s ease;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.task-item:hover {
+    background-color: var(--item-hover);
+    color: var(--text-primary);
+}
+
+.task-item.active {
+    background-color: var(--item-active);
+    color: var(--text-primary);
+}
+
+.task-item .icon {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    opacity: 0.8;
+}
+
+.task-item.active .icon {
+    opacity: 1;
+    color: var(--accent);
+}
+
+/* Add Button */
+.add-btn {
+    display: flex;
+    align-items: center;
     background: none;
     border: none;
+    color: var(--text-secondary);
+    padding: 10px 12px;
+    margin-top: 10px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;
-    gap: 8px;
-    min-width: 80px;
-}
-
-.menu-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-.menu-item.active {
-    background-color: #444;
-}
-
-.menu-item svg {
-    display: block;
-    width: 24px;
-    height: 24px;
-}
-
-.menu-item span {
+    font-size: 13px;
     font-weight: 500;
+    transition: color 0.2s ease;
+    font-family: var(--font-stack);
+}
+
+.add-btn:hover {
+    color: var(--text-primary);
+    background-color: var(--item-hover);
+}
+
+.add-btn svg {
+    margin-right: 10px;
+}
+
+/* Main Content */
+.content {
+    flex-grow: 1;
+    background: rgba(30, 30, 30, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.placeholder-content {
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.placeholder-content h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+/* Scrollbar Styling for Sidebar */
+.task-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.task-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.task-list::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.task-list::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.2);
 }
