@@ -2,6 +2,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Data Management: Constant array of projects
     const projects = [
         {
+            title: "Task Tracker",
+            tag: "App",
+            category: "Tools",
+            url: "task-tracker/index.html",
+            date: "2023-10-27",
+            author: "Me",
+            tech: "Vanilla JS"
+        },
+        {
             title: "Kinetic-Poster-1",
             tag: "Generative",
             category: "Posters",
