@@ -41,11 +41,12 @@ a {
     z-index: 2;
 }
 
-/* Fixed Wrapper -> Now just a wrapper */
+/* Fixed Wrapper */
 #fixed-nav-wrapper {
     position: relative;
     width: 100%;
-    background-color: #FFFFFF;
+    background-color: var(--bg-color); /* Matches body bg for monoblock look */
+    transition: background-color 0.3s;
 }
 
 /* Header */
@@ -103,12 +104,8 @@ a {
 }
 
 /* Sticky Navigation for First Two Columns */
-/* Sticky Navigation no longer needed for individual cols, as wrapper is fixed */
 .nav-column,
 .filter-column {
-    /* position: sticky; */
-    /* Removed */
-    /* top: 20px; */
     align-self: start;
     height: fit-content;
 }

@@ -143,13 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
             titleSpan.className = 'project-title';
             titleSpan.textContent = project.title;
 
-            // Meta (Removed as per request)
-            // const metaSpan = document.createElement('span');
-            // metaSpan.className = 'project-meta';
-            // metaSpan.textContent = `${project.date} / ${project.tech}`;
-
             link.appendChild(titleSpan);
-            // link.appendChild(metaSpan);
 
             projectItem.appendChild(numSpan);
             projectItem.appendChild(link);
@@ -256,26 +250,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let d = "";
 
         // 1. Draw Vertical Spine with rounded ends
-        // But actually the spine connects horizontal arms.
-        // It's not just a vertical line. It's segments between arms.
-
-        // We draw:
-        // Source arm -> curve -> spine -> curve -> child arm.
-
-        // Find Source Index in sorted events
-        const sourceIndex = events.findIndex(e => e.type === 'source');
-        const sourceEvent = events[sourceIndex];
-
-        // Connect Source to Spine
-        // If source is somewhere in middle, it joins the spine.
-        // If source is at top/bottom, it starts/ends the spine?
-        // Actually, the structure is a fork.
-        // Source connects to Vx.
-        // Spine runs from MinY to MaxY (covering all children + source).
-
-        // Let's iterate segments.
-        // We need to know if we are at the top or bottom of the spine to draw corners.
-
         const spineTop = minY + r;
         const spineBottom = maxY - r;
 
@@ -300,10 +274,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (isBottom) {
                     d += `M ${ev.x} ${ev.y} L ${vx - r} ${ev.y} Q ${vx} ${ev.y} ${vx} ${ev.y - r} `;
                 }
-                // Middle: Just Straight Line (T-junction? No, usually forks don't T-junction from side. But here Source enters spine.)
-                // "All" -> Spine.
-                // If "All" is in middle (unlikely for Source, usually Source is one, Children many).
-                // But if Source Y is between Child Ys...
                 else {
                     d += `M ${ev.x} ${ev.y} L ${vx} ${ev.y} `;
                 }
@@ -317,7 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 else if (isBottom) {
                     d += `M ${vx} ${ev.y - r} Q ${vx} ${ev.y} ${vx + r} ${ev.y} L ${ev.x} ${ev.y} `;
                 }
-                // Middle: Straight Line from Spine
                 else {
                     d += `M ${vx} ${ev.y} L ${ev.x} ${ev.y} `;
                 }
@@ -392,9 +361,6 @@ document.addEventListener('DOMContentLoaded', () => {
             drawLines();
         });
     });
-
-    // Resize & Scroll Listeners
-    // window.addEventListener('scroll', drawLines); // Removed scroll listener
 
     // Resize Listeners
     window.addEventListener('resize', () => {
