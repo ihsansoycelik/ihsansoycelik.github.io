@@ -280,7 +280,8 @@ function draw() {
     crtShader.setUniform('uVignette', parseFloat(params.vignette));
 
     // Render a quad to fill screen with shader
-    rect(0, 0, width, height);
+    noStroke();
+    rect(-width/2, -height/2, width, height);
 }
 
 function drawRetroGrid(pg) {
