@@ -22,6 +22,8 @@ let params = {
   echoLag: 5,
   mouseInteraction: true,
   mouseRadius: 200,
+  distortionStrength: 0.5,
+  friction: 0.9,
   useGradient: false,
   gradientColor1: '#FF0080',
   gradientColor2: '#FF8C00',
@@ -395,7 +397,7 @@ function setupSidebar(sidebar) {
   // Mouse Interaction
   createDiv('Interaction').parent(effectsContent).style('font-weight','bold').style('font-size','12px').style('margin-top','8px');
   let mouseRow = createDiv().class('toggle-row').parent(effectsContent);
-  createSpan('Mouse Repulsion').class('toggle-label').parent(mouseRow).style('font-size','11px');
+  createSpan('Interaction').class('toggle-label').parent(mouseRow).style('font-size','11px');
   let mouseSwitch = createElement('label').class('switch').parent(mouseRow);
   let mouseInput = createElement('input').attribute('type', 'checkbox').parent(mouseSwitch);
   if (params.mouseInteraction) mouseInput.attribute('checked', '');
@@ -403,6 +405,14 @@ function setupSidebar(sidebar) {
   createSpan().class('slider').parent(mouseSwitch);
 
   createSliderControl("Radius", 50, 500, params.mouseRadius, 10, effectsContent, v => params.mouseRadius = v);
+  createSliderControl("Strength", 0.1, 2.0, params.distortionStrength, 0.1, effectsContent, v => params.distortionStrength = v);
+  createSliderControl("Friction", 0.5, 0.99, params.friction, 0.01, effectsContent, v => params.friction = v);
+
+  let resetBtn = createButton('Reset Geometry').class('save-btn').parent(effectsContent);
+  resetBtn.style('margin-top', '8px');
+  resetBtn.mousePressed(() => {
+    updateGeometry();
+  });
 
   // Gradient
   createDiv('Gradient').parent(effectsContent).style('font-weight','bold').style('font-size','12px').style('margin-top','8px');
@@ -534,10 +544,21 @@ function generateGeometry() {
     
     let lineContours = [];
     let currentContour = [];
-    if (pts.length > 0) currentContour.push(pts[0]);
+    if (pts.length > 0) {
+      pts[0].curX = pts[0].x;
+      pts[0].curY = pts[0].y;
+      pts[0].vx = 0;
+      pts[0].vy = 0;
+      currentContour.push(pts[0]);
+    }
     
     for (let j = 1; j < pts.length; j++) {
       let p = pts[j];
+      p.curX = p.x;
+      p.curY = p.y;
+      p.vx = 0;
+      p.vy = 0;
+
       let prev = pts[j-1];
       if (dist(prev.x, prev.y, p.x, p.y) > 20) {
         lineContours.push(currentContour);
@@ -589,6 +610,25 @@ function createNoiseTexture() {
 
 function draw() {
   try {
+    // Physics Integration
+    if (currentFont && fontData.length > 0) {
+       updatePhysics();
+
+       for (let i = 0; i < fontData.length; i++) {
+         let lineContours = fontData[i];
+         for (let j = 0; j < lineContours.length; j++) {
+           let contour = lineContours[j];
+           for (let k = 0; k < contour.length; k++) {
+             let p = contour[k];
+             p.curX += p.vx;
+             p.curY += p.vy;
+             p.vx *= params.friction;
+             p.vy *= params.friction;
+           }
+         }
+       }
+    }
+
     background(params.bgColor);
     
     if (currentFont && fontData.length > 0) {
@@ -642,30 +682,7 @@ function draw() {
               let wave1 = sin(p.y * params.freq + t) * params.amp;
               let wave2 = cos(p.y * params.freq * 2.5 + t * 1.5) * (params.amp * 0.5);
 
-              // Mouse Interaction
-              let dx = 0;
-              let dy = 0;
-              let mx = mouseX;
-              let my = mouseY;
-
-              if (params.mouseInteraction) {
-                 let px = p.x + wave1 + wave2;
-                 let py = p.y;
-                 let d = dist(mx, my, px, py);
-
-                 if (d < params.mouseRadius) {
-                   let force = map(d, 0, params.mouseRadius, 1, 0);
-                   force = pow(force, 2);
-
-                   let angle = atan2(py - my, px - mx);
-                   let push = force * 150;
-
-                   dx = cos(angle) * push;
-                   dy = sin(angle) * push;
-                 }
-              }
-
-              vertex(p.x + wave1 + wave2 + dx, p.y + dy);
+              vertex(p.curX + wave1 + wave2, p.curY);
             }
             endShape(CLOSE);
           }
@@ -699,4 +716,46 @@ function saveLoop() {
     units: 'seconds',
     notificationDuration: 1
   });
+}
+
+function updatePhysics() {
+  if (!params.mouseInteraction) return;
+  if (!fontData || fontData.length === 0) return;
+
+  let mx = mouseX;
+  let my = mouseY;
+  let pmx = pmouseX;
+  let pmy = pmouseY;
+
+  if (mx < 0 || mx > width || my < 0 || my > height) return;
+
+  let vx_mouse = mx - pmx;
+  let vy_mouse = my - pmy;
+
+  let mouseSpeed = sqrt(vx_mouse * vx_mouse + vy_mouse * vy_mouse);
+  // Lower threshold to be responsive
+  if (mouseSpeed < 0.1) return;
+
+  for (let i = 0; i < fontData.length; i++) {
+    let lineContours = fontData[i];
+    for (let j = 0; j < lineContours.length; j++) {
+      let contour = lineContours[j];
+      for (let k = 0; k < contour.length; k++) {
+        let p = contour[k];
+
+        // Check against current position
+        let d = dist(mx, my, p.curX, p.curY);
+
+        if (d < params.mouseRadius) {
+          let force = map(d, 0, params.mouseRadius, 1, 0);
+          force = pow(force, 2);
+
+          let r = (noise(p.x * 0.01, p.y * 0.01, frameCount * 0.1) - 0.5) * 0.5;
+
+          p.vx += vx_mouse * force * params.distortionStrength * (1 + r);
+          p.vy += vy_mouse * force * params.distortionStrength * (1 + r);
+        }
+      }
+    }
+  }
 }
