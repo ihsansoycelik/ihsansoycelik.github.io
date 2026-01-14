@@ -59,7 +59,7 @@ float noise(vec2 st) {
 vec2 curve(vec2 uv) {
     vec2 centered = uv * 2.0 - 1.0;
 
-    // Correct for aspect ratio to ensure circular distortion
+    // Correct for aspect ratio to ensure circular distortion (Precise calculation using uResolution)
     float aspect = uResolution.x / uResolution.y;
 
     // Calculate distance from center in "square" pixel space
