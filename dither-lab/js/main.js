@@ -39,9 +39,21 @@ export function handleWorkerResult(result) {
 function handleStateChange(newState) {
     const algo = newState.settings.algorithm;
     const isCPU = CPU_ALGOS.includes(algo);
+    const isVideo = newState.image.type === 'video';
 
-    if (newState.image.type === 'video') {
+    // UI Feedback for Video Fallback
+    const warningEl = document.getElementById('video-cpu-warning');
+    if (warningEl) {
+        if (isVideo && isCPU) {
+            warningEl.classList.remove('hidden');
+        } else {
+            warningEl.classList.add('hidden');
+        }
+    }
+
+    if (isVideo) {
         // Video always uses GPU for real-time preview
+        // We do NOT want to start the CPU worker.
         return;
     }
 
