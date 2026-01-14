@@ -114,20 +114,36 @@ document.addEventListener('DOMContentLoaded', () => {
             newLink.href = '#';
             newLink.className = 'task-item';
             newLink.setAttribute('data-list', name);
-            newLink.innerHTML = `
-                <div class="icon-wrapper" style="background: rgba(255,255,255,0.1); color: white;">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="8" y1="6" x2="21" y2="6"></line>
-                        <line x1="8" y1="12" x2="21" y2="12"></line>
-                        <line x1="8" y1="18" x2="21" y2="18"></line>
-                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                    </svg>
-                </div>
-                <span>${name}</span>
-                <span class="count">0</span>
+
+            // Create Icon
+            const iconWrapper = document.createElement('div');
+            iconWrapper.className = 'icon-wrapper';
+            iconWrapper.style.background = 'rgba(255,255,255,0.1)';
+            iconWrapper.style.color = 'white';
+            iconWrapper.innerHTML = `
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
             `;
+
+            // Create Name Span
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = name;
+
+            // Create Count Span
+            const countSpan = document.createElement('span');
+            countSpan.className = 'count';
+            countSpan.textContent = '0';
+
+            // Append Children
+            newLink.appendChild(iconWrapper);
+            newLink.appendChild(nameSpan);
+            newLink.appendChild(countSpan);
 
             // Insert before the last item or append
             taskListNav.appendChild(newLink);
