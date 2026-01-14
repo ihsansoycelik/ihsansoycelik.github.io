@@ -59,7 +59,7 @@ float noise(vec2 st) {
 vec2 curve(vec2 uv) {
     vec2 centered = uv * 2.0 - 1.0;
 
-    // Correct for aspect ratio to ensure circular distortion
+    // Correct for aspect ratio to ensure circular distortion (Precise calculation)
     float aspect = uResolution.x / uResolution.y;
 
     // Calculate distance from center in "square" pixel space
@@ -75,7 +75,10 @@ vec2 curve(vec2 uv) {
 // Magnetic Interference
 vec2 magnet(vec2 uv) {
     vec2 diff = uv - uMagPos;
-    float dist = length(diff);
+    float aspect = uResolution.x / uResolution.y;
+    vec2 diffCorrected = diff;
+    diffCorrected.x *= aspect;
+    float dist = length(diffCorrected);
     // Smooth falloff
     float pull = smoothstep(uMagRadius, 0.0, dist);
     // Distort towards/away or swirl?
@@ -112,7 +115,10 @@ void main() {
     // We sample the texture at slightly different coordinates for R, G, B
     float aber = uAberration * 0.005; // Scale down
     // Add distance from center factor for cheap lens blur effect
-    float distFromCenter = distance(uv, vec2(0.5));
+    vec2 d = uv - vec2(0.5);
+    float aspect = uResolution.x / uResolution.y;
+    d.x *= aspect;
+    float distFromCenter = length(d);
     aber *= (1.0 + distFromCenter);
 
     vec4 col;
