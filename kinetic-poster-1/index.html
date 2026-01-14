@@ -5,19 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Liquid Kinetic Typography</title>
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #111;
-        }
+        body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #111; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: white; overflow: hidden; }
+        .notch { position: fixed; top: 0; left: 50%; transform: translateX(-50%); background-color: #000; color: white; padding: 10px 20px; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; display: flex; gap: 15px; z-index: 1000; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); }
+        .notch a { color: #aaa; text-decoration: none; padding: 8px 15px; border-radius: 15px; transition: background-color 0.3s, color 0.3s; font-weight: 500; }
+        .notch a.active { background-color: #333; color: #fff; }
+        .content { display: none; width: 100%; height: 100%; justify-content: center; align-items: center; }
+        .content.active { display: flex; }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 </head>
 <body>
+    <div class="notch">
+        <a href="#v1" class="active">Version 1</a>
+        <a href="#v2">Version 2</a>
+        <a href="#v3">Version 3</a>
+    </div>
+
+    <div id="v1" class="content active"></div>
+    <div id="v2" class="content"><h1>Version 2 Content</h1></div>
+    <div id="v3" class="content"><h1>Version 3 Content</h1></div>
+
     <script src="sketch.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.notch a');
+            const contents = document.querySelectorAll('.content');
+            let p5Instance = null;
+
+            function showTab(targetId) {
+                contents.forEach(item => item.classList.remove('active'));
+                document.getElementById(targetId).classList.add('active');
+
+                if (targetId === 'v1') {
+                    if (!p5Instance) p5Instance = new p5(sketch, 'v1');
+                } else {
+                    if (p5Instance) {
+                        p5Instance.remove();
+                        p5Instance = null;
+                    }
+                }
+            }
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    tabs.forEach(item => item.classList.remove('active'));
+                    tab.classList.add('active');
+                    const targetId = tab.getAttribute('href').substring(1);
+                    showTab(targetId);
+                });
+            });
+
+            showTab('v1');
+        });
+    </script>
 </body>
 </html>
