@@ -52,6 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 2. Theme Extraction
                 const bgColor = getComputedStyle(iframeDoc.body).backgroundColor;
                 applyTheme(bgColor);
+
+                // 3. Watch for Theme Changes
+                const observer = new MutationObserver(() => {
+                    const newBgColor = getComputedStyle(iframeDoc.body).backgroundColor;
+                    applyTheme(newBgColor);
+                });
+                observer.observe(iframeDoc.body, { attributes: true, attributeFilter: ['style', 'class'] });
             }
         } catch (e) {
             console.warn('Cannot auto-resize iframe or access content due to limitations', e);
@@ -132,9 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (url && url !== '#' && url !== '') {
                     projectFrame.src = url;
                     projectFrame.style.display = 'block';
-
-                    // Smooth scroll to the iframe
-                    projectFrame.scrollIntoView({ behavior: 'smooth' });
                 }
             });
 
