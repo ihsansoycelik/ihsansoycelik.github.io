@@ -1,61 +1,75 @@
-from playwright.sync_api import sync_playwright
-import os
+from playwright.sync_api import sync_playwright, expect
+import time
+import subprocess
+import sys
 
 def verify_sidebar():
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+    # Start HTTP server
+    port = 8001
+    server_process = subprocess.Popen([sys.executable, "-m", "http.server", str(port)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    print(f"Started HTTP server on port {port}")
 
-        url = "file:///app/task-tracker/index.html"
-        print(f"Navigating to {url}")
-        page.goto(url)
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
 
-        # Verify Sidebar Categories
-        print("Verifying sidebar categories...")
-        page.wait_for_selector("text=My Lists")
-        page.wait_for_selector("text=Personal")
-        page.wait_for_selector("text=Work")
+            url = f"http://localhost:{port}/index.html"
+            print(f"Navigating to {url}...")
+            page.goto(url)
 
-        # Verify Main Content for 'Personal' (Default)
-        print("Verifying default Personal list...")
-        page.wait_for_selector("h1:has-text('Personal')")
-        page.wait_for_selector("text=Buy groceries for the week")
+            # 1. Verify Structure
+            print("Verifying sidebar existence...")
+            expect(page.locator("#sidebar")).to_be_visible()
+            expect(page.locator("#content")).to_be_visible()
 
-        # Click 'Work' and verify update
-        print("Switching to Work list...")
-        page.click("text=Work")
-        page.wait_for_selector("h1:has-text('Work')")
-        page.wait_for_selector("text=Review Q1 Reports")
+            # 2. Verify Task List
+            print("Verifying Task List...")
+            tasks = page.locator(".nav-link")
+            count = tasks.count()
+            print(f"Found {count} tasks.")
 
-        # Add a new task to Work
-        print("Adding new task to Work...")
-        page.fill("input[placeholder='New Reminder']", "Submit Audit")
-        page.press("input[placeholder='New Reminder']", "Enter")
-        page.wait_for_selector("text=Submit Audit")
-        print("New task added.")
+            if count == 0:
+                print("FAILURE: No task links found.")
+                return
 
-        # Toggle a task completion
-        print("Toggling task completion...")
-        # Checkbox for "Review Q1 Reports" (first item)
-        # Using a more specific selector
-        page.click(".task-row:has-text('Review Q1 Reports') .checkbox-btn")
+            # Check label "Task 1"
+            first_task = tasks.nth(0)
+            text = first_task.text_content()
+            print(f"First task label: {text}")
+            if "Task 1" not in text:
+                print(f"FAILURE: Expected 'Task 1', got '{text}'")
+            else:
+                print("SUCCESS: Task naming convention verified.")
 
-        # Verify completed class
-        if page.locator(".task-row:has-text('Review Q1 Reports')").get_attribute("class").find("completed") == -1:
-             # Wait a moment for class update if needed?
-             page.wait_for_timeout(200)
-             if page.locator(".task-row:has-text('Review Q1 Reports')").get_attribute("class").find("completed") == -1:
-                 raise Exception("Task did not mark as completed")
-        print("Task marked completed.")
+            # 3. Verify Navigation
+            print("Verifying Navigation...")
+            # Click Task 2
+            if count > 1:
+                print("Clicking Task 2...")
+                tasks.nth(1).click()
 
-        # Screenshot
-        if not os.path.exists("verification"):
-            os.makedirs("verification")
-        screenshot_path = "verification/sidebar_categories_test.png"
-        page.screenshot(path=screenshot_path)
-        print(f"Screenshot saved to {screenshot_path}")
+                # Check active class
+                # Playwright to_have_class requires exact match or regex.
+                # Our class is "nav-link active"
+                expect(tasks.nth(1)).to_have_class("nav-link active")
+                print("SUCCESS: Active state applied.")
 
-        browser.close()
+                # Check Iframe src (we need to wait a bit for JS to update src)
+                page.wait_for_timeout(500)
+                frame_src = page.locator("#project-frame").get_attribute("src")
+                print(f"Iframe Source: {frame_src}")
+                if "kinetic-poster-2" in frame_src:
+                     print("SUCCESS: Iframe loaded correct URL.")
+                else:
+                     print("FAILURE: Iframe source mismatch.")
+
+            page.screenshot(path="verification/sidebar_verification.png")
+            print("Screenshot saved.")
+
+            browser.close()
+    finally:
+        server_process.terminate()
 
 if __name__ == "__main__":
     verify_sidebar()

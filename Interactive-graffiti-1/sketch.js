@@ -1,6 +1,7 @@
 // Global variables
 let pg; // Off-screen graphics buffer for static trails
 let drips = []; // Array to hold active Drip objects
+let splats = []; // Array to hold active Splat objects
 let uiFont;
 
 // UI State Variables
@@ -127,106 +128,33 @@ function draw() {
     image(bgImage, x, y, w, h);
   }
   
-  // 1. Draw static buffer
+  // 1. Process and draw splats (these are drawn once, immediately)
+  for (let i = splats.length - 1; i >= 0; i--) {
+    let s = splats[i];
+    s.display(pg); // Immediately draw to the off-screen buffer
+    splats.splice(i, 1); // Remove after drawing
+  }
+
+  // 2. Draw static buffer
   image(pg, 0, 0);
   
-  // 2. Update and draw active drips
+  // 3. Update and draw active drips
   for (let i = drips.length - 1; i >= 0; i--) {
     let d = drips[i];
     d.update();
-    d.display(window); // Draw to main canvas
+    d.display(window); // Draw to main canvas for live animation
     
     if (d.isDone()) {
-      d.display(pg); // Stamp to buffer
+      d.display(pg); // Stamp final state to buffer
       drips.splice(i, 1);
     }
   }
   
-  // 3. Draw Kinetic Text
-  // drawKineticText(); // Removed as per request
+  // 4. Draw Kinetic Text
+  drawKineticText();
   
-  // 4. Draw Static UI Overlays (Corners)
-  // drawStaticOverlays(); // Removed as per request
-}
-
-function drawKineticText() {
-  push();
-  fill(textColor);
-  noStroke();
-  textFont(selectedFont);
-  textSize(24);
-  textAlign(CENTER, BOTTOM); // Vertical text baseline
-
-  // Move text to the left of the sidebar area to ensure visibility
-  // Sidebar is 280px + 20px margin = 300px. 
-  // Let's put text at width - 350px.
-  let startX = width - 350; 
-  let startY = height / 2;
-  
-  translate(startX, startY);
-  rotate(HALF_PI); // Rotate 90 deg clockwise to make text vertical
-  
-  // Text processing
-  // We treat the whole text as a single string for the wave effect
-  // But we replace newlines with spaces for continuity, OR treat newlines as blocks
-  // The user input has newlines. Let's respect them by adding extra spacing or just joining.
-  // The image shows "HERE COMES THE BOAT..." as one continuous vertical line.
-  // We will join with spaces.
-  let fullText = contentText.replace(/\n/g, ' ').toUpperCase();
-  
-  // Center alignment logic (calculated relative to rotated axis)
-  let totalW = textWidth(fullText);
-  let currentX = -totalW / 2; 
-  
-  for (let i = 0; i < fullText.length; i++) {
-    let char = fullText.charAt(i);
-    let cw = textWidth(char);
-    
-    // Wave calculation
-    let wave = sin(frameCount * 0.05 * animSpeed + i * animFreq) * animAmp;
-    
-    text(char, currentX + cw/2, -10 + wave);
-    
-    currentX += cw;
-  }
-  
-  pop();
-}
-
-function drawStaticOverlays() {
-  push();
-  fill(textColor);
-  noStroke();
-  textFont('Inter'); // Always Inter for UI
-  textSize(12);
-  
-  // Top-Left
-  textAlign(LEFT, TOP);
-  text("NIGHT BOAT TO CAIRO BY MADNESS.", 40, 40);
-  
-  // Bottom-Left
-  textAlign(LEFT, BOTTOM);
-  text("@holke79", 40, height - 40);
-  
-  // Top-Right Circle "79"
-  // Position it to the left of the vertical text roughly
-  // Vertical text is at width - 350. 
-  // Let's put the circle at width - 350 - 50? Or aligned?
-  // Image shows it top right, but left of the text.
-  let cx = width - 400; 
-  let cy = 60;
-  
-  stroke(textColor);
-  strokeWeight(1);
-  noFill();
-  ellipse(cx, cy, 40, 40);
-  
-  fill(textColor);
-  noStroke();
-  textAlign(CENTER, CENTER);
-  text("79", cx, cy + 1);
-  
-  pop();
+  // 5. Draw Static UI Overlays (Corners)
+  drawStaticOverlays();
 }
 
 function mouseDragged(e) {
@@ -236,43 +164,67 @@ function mouseDragged(e) {
   }
   
   // Setup Stroke Color
-  let strokeCol;
+  let baseColor;
   
   if (gradientEnabled) {
     let palette = GRADIENTS[currentGradient];
     let t = map(mouseY, 0, height, 0, palette.length - 1);
     let i1 = floor(t);
     let i2 = ceil(t);
-    // Handle edge case at bottom
     if (i2 >= palette.length) { i1 = palette.length - 1; i2 = palette.length - 1; }
-    strokeCol = lerpColor(color(palette[i1]), color(palette[i2]), t - i1);
+    baseColor = lerpColor(color(palette[i1]), color(palette[i2]), t - i1);
   } else {
-    strokeCol = textColor;
+    baseColor = textColor;
   }
 
-  // Draw Stroke
-  pg.stroke(strokeCol);
-  pg.strokeWeight(brushSize);
-  pg.strokeCap(ROUND);
-  pg.strokeJoin(ROUND);
-  pg.noFill();
-  pg.line(pmouseX, pmouseY, mouseX, mouseY);
+  // --- Particle Brush Logic ---
+  pg.noStroke();
+  let d = dist(mouseX, mouseY, pmouseX, pmouseY);
+  let steps = d * 2;
+  for (let i = 0; i < steps; i++) {
+    let t = i / steps;
+    let x = lerp(pmouseX, mouseX, t);
+    let y = lerp(pmouseY, mouseY, t);
+
+    let particleCount = brushSize * 0.5;
+    for (let j = 0; j < particleCount; j++) {
+      let offsetX = randomGaussian(0, brushSize * 0.25);
+      let offsetY = randomGaussian(0, brushSize * 0.25);
+      let particleSize = random(brushSize * 0.05, brushSize * 0.2);
+      let particleAlpha = random(10, 50);
+      let c = color(baseColor);
+      c.setAlpha(particleAlpha);
+      pg.fill(c);
+      pg.ellipse(x + offsetX, y + offsetY, particleSize, particleSize);
+    }
+
+    let highlightCount = brushSize * 0.1;
+    for (let j = 0; j < highlightCount; j++) {
+        let offsetX = randomGaussian(0, brushSize * 0.2);
+        let offsetY = randomGaussian(0, brushSize * 0.2);
+        let particleSize = random(brushSize * 0.02, brushSize * 0.1);
+        let particleAlpha = random(20, 70);
+        pg.fill(255, particleAlpha);
+        pg.ellipse(x + offsetX, y + offsetY, particleSize, particleSize);
+    }
+  }
   
-  // Highlight
-  pg.stroke(255, 100);
-  pg.strokeWeight(brushSize * 0.3);
-  pg.line(pmouseX, pmouseY, mouseX, mouseY);
-  
-  // Spawn Drip
+  // --- Spawn Effects Logic ---
   let ms = dist(mouseX, mouseY, pmouseX, pmouseY);
   let safeSpeed = constrain(ms, 0.1, 50);
+
+  // Spawn Drip
   let intensity = map(safeSpeed, 0, 30, 1.0, 0.0, true);
   let spawnChance = (intensity * 0.8) + 0.05;
-  
   if (random() < spawnChance) {
     let jitterX = random(-brushSize * 0.2, brushSize * 0.2);
-    let drip = new Drip(mouseX + jitterX, mouseY, strokeCol, brushSize, intensity);
-    drips.push(drip);
+    drips.push(new Drip(mouseX + jitterX, mouseY, baseColor, brushSize, intensity));
+  }
+
+  // Spawn Splat
+  let splatChance = map(safeSpeed, 15, 50, 0, 0.15, true); // Chance increases with speed
+  if(random() < splatChance) {
+    splats.push(new Splat(mouseX, mouseY, baseColor, brushSize, safeSpeed));
   }
 }
 
@@ -317,22 +269,182 @@ class Drip {
   display(target) {
     target.push();
     target.noStroke();
-    target.fill(this.col);
     
-    target.rectMode(CORNER);
-    target.rect(this.x - this.width/2, this.y, this.width, this.len);
+    // Main drip color
+    let c = color(this.col);
+    target.fill(c);
     
     let beadY = this.y + this.len;
-    target.ellipse(this.x, beadY, this.beadSize, this.beadSize);
+    let numPoints = 10; // More points for a smoother curve
+
+    target.beginShape();
+    // Start point (top-left of the drip's base)
+    target.curveVertex(this.x - this.width / 2, this.y);
     
+    // Define the left edge of the drip
+    for (let i = 0; i <= numPoints; i++) {
+      let t = i / numPoints;
+      let y = lerp(this.y, beadY, t);
+      // Use easing to make the drip taper and then bulge into the bead
+      let w = lerp(this.width, this.beadSize, pow(t, 1.5));
+      let jitter = (1 - t) * randomGaussian(0, this.width * 0.05);
+      target.curveVertex(this.x - w / 2 + jitter, y);
+    }
+    // Point at the very bottom of the bead
+    target.curveVertex(this.x, beadY + this.beadSize * 0.3);
+
+    // Define the right edge of the drip (mirroring the left)
+    for (let i = numPoints; i >= 0; i--) {
+      let t = i / numPoints;
+      let y = lerp(this.y, beadY, t);
+      let w = lerp(this.width, this.beadSize, pow(t, 1.5));
+      let jitter = (1 - t) * randomGaussian(0, this.width * 0.05);
+      target.curveVertex(this.x + w / 2 + jitter, y);
+    }
+
+    // End point (top-right of the drip's base)
+    target.curveVertex(this.x + this.width / 2, this.y);
+    target.endShape(CLOSE);
+
     // Highlight
+    c.setAlpha(100);
     target.fill(255, 100);
     let highlightWidth = this.width * 0.3;
-    target.rect(this.x - highlightWidth/2 + this.highlightOffset, this.y, highlightWidth, this.len);
+    let beadHighlightSize = this.beadSize * 0.4;
+
+    // Draw a simple highlight shape
+    target.beginShape();
+    target.vertex(this.x - highlightWidth / 2 + this.highlightOffset, this.y);
+    target.vertex(this.x + highlightWidth / 2 + this.highlightOffset, this.y);
+    target.vertex(this.x + beadHighlightSize / 2 + this.highlightOffset, beadY);
+    target.vertex(this.x - beadHighlightSize / 2 + this.highlightOffset, beadY);
+    target.endShape(CLOSE);
+
     target.ellipse(this.x + this.beadSize * 0.2, beadY - this.beadSize * 0.2, this.beadSize * 0.3, this.beadSize * 0.3);
+
+    target.pop();
+  }
+}
+
+// --- Splat Class ---
+class Splat {
+  constructor(x, y, col, baseWidth, speed) {
+    this.x = x;
+    this.y = y;
+    this.col = col;
+
+    // Splats are larger and more irregular based on speed
+    this.radius = baseWidth * map(speed, 10, 50, 0.5, 2.0, true);
+    this.particles = [];
+
+    let particleCount = int(random(10, 30));
+    for (let i = 0; i < particleCount; i++) {
+      let angle = random(TWO_PI);
+      // Let particles fly out further based on speed
+      let r = randomGaussian(0, this.radius * 0.5);
+      let pX = this.x + cos(angle) * r;
+      let pY = this.y + sin(angle) * r;
+      let pSize = random(this.radius * 0.1, this.radius * 0.3);
+      this.particles.push({ x: pX, y: pY, size: pSize });
+    }
+  }
+
+  // Splats are drawn once to the off-screen buffer
+  display(target) {
+    target.push();
+    target.noStroke();
+
+    let baseColor = color(this.col);
+
+    for (let p of this.particles) {
+        let alpha = random(80, 150);
+        baseColor.setAlpha(alpha);
+        target.fill(baseColor);
+        target.ellipse(p.x, p.y, p.size, p.size);
+    }
     
     target.pop();
   }
+}
+
+function drawKineticText() {
+  push();
+  fill(textColor);
+  noStroke();
+  textFont(selectedFont);
+  textSize(24);
+  textAlign(CENTER, BOTTOM); // Vertical text baseline
+
+  // Move text to the left of the sidebar area to ensure visibility
+  // Sidebar is 280px + 20px margin = 300px.
+  // Let's put text at width - 350px.
+  let startX = width - 350;
+  let startY = height / 2;
+
+  translate(startX, startY);
+  rotate(HALF_PI); // Rotate 90 deg clockwise to make text vertical
+
+  // Text processing
+  // We treat the whole text as a single string for the wave effect
+  // But we replace newlines with spaces for continuity, OR treat newlines as blocks
+  // The user input has newlines. Let's respect them by adding extra spacing or just joining.
+  // The image shows "HERE COMES THE BOAT..." as one continuous vertical line.
+  // We will join with spaces.
+  let fullText = contentText.replace(/\n/g, ' ').toUpperCase();
+
+  // Center alignment logic (calculated relative to rotated axis)
+  let totalW = textWidth(fullText);
+  let currentX = -totalW / 2;
+
+  for (let i = 0; i < fullText.length; i++) {
+    let char = fullText.charAt(i);
+    let cw = textWidth(char);
+
+    // Wave calculation
+    let wave = sin(frameCount * 0.05 * animSpeed + i * animFreq) * animAmp;
+
+    text(char, currentX + cw/2, -10 + wave);
+
+    currentX += cw;
+  }
+
+  pop();
+}
+
+function drawStaticOverlays() {
+  push();
+  fill(textColor);
+  noStroke();
+  textFont('Inter'); // Always Inter for UI
+  textSize(12);
+
+  // Top-Left
+  textAlign(LEFT, TOP);
+  text("NIGHT BOAT TO CAIRO BY MADNESS.", 40, 40);
+
+  // Bottom-Left
+  textAlign(LEFT, BOTTOM);
+  text("@holke79", 40, height - 40);
+
+  // Top-Right Circle "79"
+  // Position it to the left of the vertical text roughly
+  // Vertical text is at width - 350.
+  // Let's put the circle at width - 350 - 50? Or aligned?
+  // Image shows it top right, but left of the text.
+  let cx = width - 400;
+  let cy = 60;
+
+  stroke(textColor);
+  strokeWeight(1);
+  noFill();
+  ellipse(cx, cy, 40, 40);
+
+  fill(textColor);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  text("79", cx, cy + 1);
+
+  pop();
 }
 
 // Disable context menu
