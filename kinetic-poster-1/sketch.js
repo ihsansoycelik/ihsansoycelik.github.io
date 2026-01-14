@@ -13,7 +13,6 @@ const sketch = (p) => {
 
   let params = {
     text: "Here\nComes\nThe\nBoat",
-    bgColor: '#0022AA',
     textColor: '#E0E0E0',
     freq: 0.08,
     amp: 20,
@@ -40,7 +39,7 @@ const sketch = (p) => {
 
     let css = `
       #v1 #main-container { display: flex; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #ffffff; }
-      #v1 #canvas-container { flex: 1; display: flex; justify-content: center; align-items: center; background: ${params.bgColor}; position: relative; overflow: hidden; }
+      #v1 #canvas-container { flex: 1; display: flex; justify-content: center; align-items: center; background: #0022AA; position: relative; overflow: hidden; }
       #v1 #sidebar { width: 320px; background: rgba(30, 30, 30, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-left: 1px solid rgba(255, 255, 255, 0.1); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; flex-shrink: 0; box-sizing: border-box; z-index: 10; }
       #v1 .control-section { background: rgba(255, 255, 255, 0.05); border-radius: 10px; overflow: hidden; }
       #v1 .section-header { padding: 12px 14px; font-weight: 500; font-size: 13px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
@@ -59,7 +58,7 @@ const sketch = (p) => {
     cnv.parent(canvasContainer);
 
     setupSidebar(sidebar);
-    document.body.style.backgroundColor = params.bgColor;
+    document.body.style.backgroundColor = '#0022AA';
     
     for (let key in fontUrls) {
       p.loadFont(fontUrls[key], (loadedFont) => {
@@ -174,7 +173,7 @@ const sketch = (p) => {
   }
 
   p.draw = () => {
-    p.background(params.bgColor);
+    p.background('#0022AA');
     if (fontLoaded) {
       p.noStroke();
       for (let i = 0; i < fontData.length; i++) {
