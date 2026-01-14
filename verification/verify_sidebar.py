@@ -10,41 +10,48 @@ def verify_sidebar():
         print(f"Navigating to {url}")
         page.goto(url)
 
-        # Verify Sidebar exists
-        print("Verifying sidebar...")
-        if page.locator(".sidebar").count() == 0:
-            raise Exception("Sidebar not found")
+        # Verify Sidebar Categories
+        print("Verifying sidebar categories...")
+        page.wait_for_selector("text=My Lists")
+        page.wait_for_selector("text=Personal")
+        page.wait_for_selector("text=Work")
 
-        # Verify initial tasks
-        print("Verifying initial tasks...")
-        page.wait_for_selector("text=Task 1")
-        page.wait_for_selector("text=Task 2")
+        # Verify Main Content for 'Personal' (Default)
+        print("Verifying default Personal list...")
+        page.wait_for_selector("h1:has-text('Personal')")
+        page.wait_for_selector("text=Buy groceries for the week")
 
-        # Verify Add button
-        add_btn = page.locator("#add-task-btn")
-        if add_btn.count() == 0:
-            raise Exception("Add button not found")
+        # Click 'Work' and verify update
+        print("Switching to Work list...")
+        page.click("text=Work")
+        page.wait_for_selector("h1:has-text('Work')")
+        page.wait_for_selector("text=Review Q1 Reports")
 
-        # Add new task
-        print("Adding new task...")
-        add_btn.click()
-        page.wait_for_selector("text=Task 3")
-        print("Task 3 appeared.")
+        # Add a new task to Work
+        print("Adding new task to Work...")
+        page.fill("input[placeholder='New Reminder']", "Submit Audit")
+        page.press("input[placeholder='New Reminder']", "Enter")
+        page.wait_for_selector("text=Submit Audit")
+        print("New task added.")
 
-        # Click new task and verify content update
-        print("Clicking Task 3...")
-        page.click("text=Task 3")
+        # Toggle a task completion
+        print("Toggling task completion...")
+        # Checkbox for "Review Q1 Reports" (first item)
+        # Using a more specific selector
+        page.click(".task-row:has-text('Review Q1 Reports') .checkbox-btn")
 
-        # Check if main content header updated
-        header = page.locator(".content h1")
-        if header.inner_text() != "Task 3":
-            raise Exception(f"Header text mismatch. Expected 'Task 3', got '{header.inner_text()}'")
-        print("Content header updated correctly.")
+        # Verify completed class
+        if page.locator(".task-row:has-text('Review Q1 Reports')").get_attribute("class").find("completed") == -1:
+             # Wait a moment for class update if needed?
+             page.wait_for_timeout(200)
+             if page.locator(".task-row:has-text('Review Q1 Reports')").get_attribute("class").find("completed") == -1:
+                 raise Exception("Task did not mark as completed")
+        print("Task marked completed.")
 
         # Screenshot
         if not os.path.exists("verification"):
             os.makedirs("verification")
-        screenshot_path = "verification/sidebar_test.png"
+        screenshot_path = "verification/sidebar_categories_test.png"
         page.screenshot(path=screenshot_path)
         print(f"Screenshot saved to {screenshot_path}")
 

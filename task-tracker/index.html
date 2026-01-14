@@ -8,38 +8,116 @@
 </head>
 <body>
     <div class="app-container">
+        <!-- Sidebar -->
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>Reminders</h2>
-            </div>
-            <nav class="task-list" id="task-list">
-                <a href="#" class="task-item active">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="8" x2="12" y2="16"></line>
-                        <line x1="8" y1="12" x2="16" y2="12"></line>
-                    </svg>
-                    <span>Task 1</span>
-                </a>
-                <a href="#" class="task-item">
-                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                    </svg>
-                    <span>Task 2</span>
-                </a>
-            </nav>
-            <button id="add-task-btn" class="add-btn" aria-label="Add List">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
+            <div class="sidebar-search">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <span>Add List</span>
-            </button>
+                <input type="text" placeholder="Search">
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="section-title">My Lists</h3>
+                <nav class="task-list" id="task-list">
+                    <a href="#" class="task-item active" data-list="Personal">
+                        <div class="icon-wrapper color-blue">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <span>Personal</span>
+                        <span class="count">3</span>
+                    </a>
+                    <a href="#" class="task-item" data-list="Work">
+                        <div class="icon-wrapper color-orange">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                            </svg>
+                        </div>
+                        <span>Work</span>
+                        <span class="count">5</span>
+                    </a>
+                    <a href="#" class="task-item" data-list="Clients">
+                        <div class="icon-wrapper color-green">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
+                        <span>Clients</span>
+                        <span class="count">2</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="sidebar-footer">
+                <button id="add-list-btn" class="add-btn" aria-label="Add List">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Add List</span>
+                </button>
+            </div>
         </aside>
+
+        <!-- Main Content -->
         <main class="content">
-            <div class="placeholder-content">
-                <h1>Task 1</h1>
-                <p>Select a list to view details</p>
+            <header class="content-header">
+                <div class="header-title">
+                    <h1 id="list-title">Personal</h1>
+                    <span class="header-count" id="list-count">3 items</span>
+                </div>
+                <div class="header-actions">
+                    <button class="action-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="1"></circle>
+                            <circle cx="19" cy="12" r="1"></circle>
+                            <circle cx="5" cy="12" r="1"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <div class="tasks-container" id="tasks-container">
+                <!-- Tasks will be injected here -->
+                <div class="task-row">
+                    <button class="checkbox-btn"></button>
+                    <div class="task-details">
+                        <span class="task-text">Buy groceries for the week</span>
+                        <span class="task-meta">Today</span>
+                    </div>
+                </div>
+                <div class="task-row">
+                    <button class="checkbox-btn"></button>
+                    <div class="task-details">
+                        <span class="task-text">Call insurance company</span>
+                        <span class="task-meta text-red">Overdue</span>
+                    </div>
+                </div>
+                <div class="task-row completed">
+                    <button class="checkbox-btn checked"></button>
+                    <div class="task-details">
+                        <span class="task-text">Schedule dentist appointment</span>
+                        <span class="task-meta">Yesterday</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="new-task-input">
+                <button class="add-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+                <input type="text" placeholder="New Reminder">
             </div>
         </main>
     </div>
