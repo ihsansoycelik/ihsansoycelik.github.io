@@ -9,7 +9,7 @@ let overlayInputs = [];
 let inputCanvasW, inputCanvasH, btnApplySize;
 
 // Color Pickers
-let colorBg, colorFace, colorShadow;
+let colorFace, colorShadow;
 let colorOverlayText, colorOverlayLines;
 let colorBadgeBg, colorBadgeText;
 
@@ -73,12 +73,8 @@ function setup() {
   }
   
   // Colors
-  colorBg = select('#col-bg');
   // Sync background color
-  document.body.style.backgroundColor = colorBg.value();
-  colorBg.input(() => {
-    document.body.style.backgroundColor = colorBg.value();
-  });
+  document.body.style.backgroundColor = "#111111";
 
   colorFace = select('#col-face');
   colorShadow = select('#col-shadow');
@@ -147,14 +143,14 @@ function setupUI() {
 
 function draw() {
   // 1. Draw to Offscreen Buffer
-  pg.background(colorBg.value());
+  pg.background("#111111");
   
   drawMainText(pg);
   drawOverlay(pg);
   
   // 2. Render to Main Canvas
   blendMode(BLEND);
-  background(colorBg.value());
+  background("#111111");
   
   if (checkboxGradient.checked()) {
     applyGradientMap();

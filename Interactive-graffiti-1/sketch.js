@@ -5,7 +5,7 @@ let splats = []; // Array to hold active Splat objects
 let uiFont;
 
 // UI State Variables
-let contentText = "Here\nComes\nThe\nBoat";
+let contentText = "";
 let selectedFont = "Inter";
 let bgColor;
 let bgImage; // Background image variable
@@ -67,22 +67,6 @@ function setupUI() {
   });
 
   // Colors
-  bind('bg-color-picker', 'input', (e) => {
-    bgColor = color(e.target.value);
-    document.body.style.backgroundColor = e.target.value;
-    document.getElementById('bg-preview').style.backgroundColor = e.target.value;
-  });
-
-  bind('bg-image-upload', 'change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      loadImage(url, (img) => {
-        bgImage = img;
-      });
-    }
-  });
-  
   bind('text-color-picker', 'input', (e) => {
     textColor = color(e.target.value);
     document.getElementById('text-preview').style.backgroundColor = e.target.value;
@@ -414,39 +398,7 @@ function drawKineticText() {
 }
 
 function drawStaticOverlays() {
-  push();
-  fill(textColor);
-  noStroke();
-  textFont('Inter'); // Always Inter for UI
-  textSize(12);
-
-  // Top-Left
-  textAlign(LEFT, TOP);
-  text("NIGHT BOAT TO CAIRO BY MADNESS.", 40, 40);
-
-  // Bottom-Left
-  textAlign(LEFT, BOTTOM);
-  text("@holke79", 40, height - 40);
-
-  // Top-Right Circle "79"
-  // Position it to the left of the vertical text roughly
-  // Vertical text is at width - 350.
-  // Let's put the circle at width - 350 - 50? Or aligned?
-  // Image shows it top right, but left of the text.
-  let cx = width - 400;
-  let cy = 60;
-
-  stroke(textColor);
-  strokeWeight(1);
-  noFill();
-  ellipse(cx, cy, 40, 40);
-
-  fill(textColor);
-  noStroke();
-  textAlign(CENTER, CENTER);
-  text("79", cx, cy + 1);
-
-  pop();
+  // Overlays removed as per request
 }
 
 // Disable context menu
