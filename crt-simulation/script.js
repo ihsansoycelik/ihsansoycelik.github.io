@@ -168,7 +168,7 @@ let contentLayer;
 let font;
 
 // State
-let params = {
+const defaultParams = {
     text: "SYSTEM MALFUNCTION // SIGNAL LOST // RETRYING...",
     textSpeed: 3,
     textSize: 100,
@@ -186,6 +186,8 @@ let params = {
     vignette: 0.4,
     paused: false
 };
+
+let params = JSON.parse(JSON.stringify(defaultParams));
 
 // Internal animation state
 let textX = 0;
@@ -356,13 +358,29 @@ function setupUI() {
     });
 
     btns.reset.addEventListener('click', () => {
-        // Reset values to defaults (would need to store defaults or hardcode)
-        // For simplicity, just reload page or set a few keys
-        params.curve = 0.15;
-        inputs.curve.value = 0.15;
-        params.magStrength = 0.3;
-        inputs.magStr.value = 0.3;
-        // ... extend as needed
+        // Reset params
+        params = JSON.parse(JSON.stringify(defaultParams));
+
+        // Update Inputs
+        inputs.text.value = params.text;
+        inputs.speed.value = params.textSpeed;
+        inputs.size.value = params.textSize;
+        inputs.font.value = params.textFont;
+        inputs.color.value = params.textColor;
+
+        inputs.magStr.value = params.magStrength;
+        inputs.magRad.value = params.magRadius;
+
+        inputs.curve.value = params.curve;
+        inputs.scan.value = params.scanlines;
+        inputs.glow.value = params.glow;
+        inputs.noise.value = params.noise;
+        inputs.aber.value = params.aberration;
+        inputs.vig.value = params.vignette;
+
+        // Update Buttons / Toggles
+        btns.pause.textContent = params.paused ? "Play" : "Pause";
+        btns.dir.textContent = params.direction === 1 ? "Right to Left" : "Left to Right";
     });
 
     // Panel Toggle
