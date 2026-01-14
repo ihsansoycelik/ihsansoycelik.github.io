@@ -39,8 +39,19 @@ export function handleWorkerResult(result) {
 function handleStateChange(newState) {
     const algo = newState.settings.algorithm;
     const isCPU = CPU_ALGOS.includes(algo);
+    const isVideo = newState.image.type === 'video';
 
-    if (newState.image.type === 'video') {
+    // Toggle warning if video + CPU algo selected
+    const warningEl = document.getElementById('video-cpu-warning');
+    if (warningEl) {
+        if (isVideo && isCPU) {
+            warningEl.classList.remove('hidden');
+        } else {
+            warningEl.classList.add('hidden');
+        }
+    }
+
+    if (isVideo) {
         // Video always uses GPU for real-time preview
         return;
     }
@@ -227,19 +238,8 @@ function loop() {
          // Always render video frames using GPU (fallback to Bayer/None if CPU algo selected)
          loadTexture(state.image.source);
 
-         // If CPU algo selected, force fallback to ordered (Bayer)
-         // because CPU dithering 30fps video is impossible in JS main thread
-         const isCPU = CPU_ALGOS.includes(state.settings.algorithm);
-         let renderState = state;
-         if (isCPU) {
-             renderState = {
-                 ...state,
-                 settings: {
-                     ...state.settings,
-                     algorithm: 'bayer-4'
-                 }
-             };
-         }
+         // Get effective state (with fallback if needed)
+         const renderState = getEffectiveRenderState(state);
          render(renderState, false);
          return;
     }
@@ -252,4 +252,21 @@ function loop() {
         render(state);
     }
     // If CPU, we do nothing. The worker callback handles the render.
+}
+
+function getEffectiveRenderState(currentState) {
+    // If video and CPU algo selected, fallback to Bayer-4
+    if (currentState.image.type === 'video') {
+         const isCPU = CPU_ALGOS.includes(currentState.settings.algorithm);
+         if (isCPU) {
+             return {
+                 ...currentState,
+                 settings: {
+                     ...currentState.settings,
+                     algorithm: 'bayer-4'
+                 }
+             };
+         }
+    }
+    return currentState;
 }
