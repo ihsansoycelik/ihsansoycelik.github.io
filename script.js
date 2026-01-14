@@ -37,25 +37,68 @@ document.addEventListener('DOMContentLoaded', () => {
     const projectFrame = document.getElementById('project-frame');
     const projectViewer = document.getElementById('project-viewer');
 
-    // Iframe Auto-Resize Logic
+    // Iframe Auto-Resize & Theme Logic
     projectFrame.addEventListener('load', () => {
         try {
             const iframeDoc = projectFrame.contentDocument || projectFrame.contentWindow.document;
             if (iframeDoc) {
-                // Set height to content's scrollHeight
-                // Resetting to auto first helps if shrinking, but just scrollHeight is safer for now to prevent flicker
+                // 1. Auto-Resize
                 projectFrame.style.height = iframeDoc.body.scrollHeight + 'px';
-
-                // Optional: Observer for dynamic content changes
                 const ro = new ResizeObserver(() => {
                     projectFrame.style.height = iframeDoc.body.scrollHeight + 'px';
                 });
                 ro.observe(iframeDoc.body);
+
+                // 2. Theme Extraction
+                const bgColor = getComputedStyle(iframeDoc.body).backgroundColor;
+                applyTheme(bgColor);
             }
         } catch (e) {
-            console.warn('Cannot auto-resize iframe due to cross-origin or limitations', e);
+            console.warn('Cannot auto-resize iframe or access content due to limitations', e);
         }
     });
+
+    // Theme Helper Functions
+    function getContrastColor(rgbColor) {
+        if (!rgbColor) return '#000000';
+
+        // Match rgb or rgba
+        const match = rgbColor.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (match) {
+            const r = parseInt(match[1]);
+            const g = parseInt(match[2]);
+            const b = parseInt(match[3]);
+
+            // YIQ equation
+            const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            return (yiq >= 128) ? '#000000' : '#FFFFFF';
+        }
+        return '#000000';
+    }
+
+    function applyTheme(bgColor) {
+        const root = document.documentElement;
+
+        // Handle transparency or default
+        if (bgColor === 'rgba(0, 0, 0, 0)' || bgColor === 'transparent') {
+            bgColor = '#FFFFFF';
+        }
+
+        const contrastColor = getContrastColor(bgColor);
+
+        root.style.setProperty('--bg-color', bgColor);
+        root.style.setProperty('--text-color', contrastColor);
+
+        if (contrastColor === '#FFFFFF') {
+            // Dark Mode
+            root.style.setProperty('--active-bg-color', 'rgba(255, 255, 255, 0.2)');
+            root.style.setProperty('--grain-blend-mode', 'overlay');
+        } else {
+            // Light Mode
+            root.style.setProperty('--active-bg-color', '#E0E0E0');
+            root.style.setProperty('--grain-blend-mode', 'multiply');
+        }
+    }
 
     // Create SVG Layer
     const svgNS = "http://www.w3.org/2000/svg";
@@ -203,7 +246,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const path = document.createElementNS(svgNS, "path");
             path.setAttribute("d", d);
-            path.setAttribute("stroke", "black");
             path.setAttribute("stroke-width", "1");
             path.setAttribute("fill", "none");
             path.classList.add('connection-line');
@@ -284,7 +326,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const path = document.createElementNS(svgNS, "path");
         path.setAttribute("d", d);
-        path.setAttribute("stroke", "black");
         path.setAttribute("stroke-width", "1");
         path.setAttribute("fill", "none");
         path.classList.add('connection-line');

@@ -5,14 +5,23 @@
     box-sizing: border-box;
 }
 
+:root {
+    --bg-color: #FFFFFF;
+    --text-color: #000000;
+    --secondary-text-color: #999;
+    --active-bg-color: #E0E0E0;
+    --grain-blend-mode: multiply; /* multiply for light bg, screen/overlay for dark */
+}
+
 body {
     font-family: Helvetica, Arial, sans-serif;
     font-size: 14px;
-    background-color: #FFFFFF;
-    color: #000000;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 ul {
@@ -21,7 +30,7 @@ ul {
 
 a {
     text-decoration: none;
-    color: #000000;
+    color: var(--text-color);
     display: inline-block;
     cursor: pointer;
     padding: 4px 8px;
@@ -60,10 +69,11 @@ a {
     display: block;
     width: 100vw;
     height: 1px;
-    background: #000;
+    background: var(--text-color);
     position: absolute;
     left: 0;
     bottom: 0;
+    transition: background 0.3s;
 }
 
 /* Grid Layout */
@@ -107,7 +117,7 @@ a {
 .column-header {
     font-size: 12px;
     font-weight: normal;
-    color: #000;
+    color: var(--text-color);
     margin-bottom: 25px;
     padding-left: 0;
 }
@@ -141,7 +151,7 @@ a {
 /* Active State */
 .nav-link.active,
 .tag-link.active {
-    background-color: #E0E0E0;
+    background-color: var(--active-bg-color);
     /* Grey background */
     border-radius: 4px;
     /* Soft rounded corners */
@@ -199,7 +209,7 @@ a {
     /* Matching header font */
     font-size: 12px;
     /* Matching header size (12px) */
-    color: #000;
+    color: var(--text-color);
 }
 
 .contact-link .icon {
@@ -271,7 +281,7 @@ body::before {
     height: 200%;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     opacity: 0.15;
-    mix-blend-mode: overlay;
+    mix-blend-mode: var(--grain-blend-mode);
     pointer-events: none;
     z-index: 9999;
     animation: grain 0.5s steps(10) infinite;
@@ -335,9 +345,11 @@ body::before {
 
 /* Menu Line Animation */
 .connection-line {
+    stroke: var(--text-color);
     stroke-dasharray: 2000;
     stroke-dashoffset: 2000;
     animation: drawLine 0.8s ease-out forwards;
+    transition: stroke 0.3s;
 }
 
 @keyframes drawLine {
@@ -354,7 +366,7 @@ body::before {
     height: 40px;
     border: 3px solid rgba(0, 0, 0, 0.1);
     border-radius: 50%;
-    border-top-color: #000;
+    border-top-color: var(--text-color);
     animation: spin 1s ease-in-out infinite;
     position: absolute;
     left: 50%;
