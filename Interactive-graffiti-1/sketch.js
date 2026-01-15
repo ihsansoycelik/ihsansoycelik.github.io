@@ -179,34 +179,41 @@ function mouseDragged(e) {
     baseColor = textColor;
   }
 
-  // --- Particle Brush Logic ---
+  // --- Spray Pen Logic ---
   pg.noStroke();
   let d = dist(mouseX, mouseY, pmouseX, pmouseY);
-  let steps = d * 2;
+  let steps = max(1, d * 0.5); // Fewer steps, but more density per step for spray feel
   for (let i = 0; i < steps; i++) {
     let t = i / steps;
     let x = lerp(pmouseX, mouseX, t);
     let y = lerp(pmouseY, mouseY, t);
 
-    let particleCount = brushSize * 0.5;
+    // Increase density for spray can effect
+    let particleCount = brushSize * 3;
     for (let j = 0; j < particleCount; j++) {
-      let offsetX = randomGaussian(0, brushSize * 0.25);
-      let offsetY = randomGaussian(0, brushSize * 0.25);
-      let particleSize = random(brushSize * 0.05, brushSize * 0.2);
-      let particleAlpha = random(10, 50);
+      // Wide Gaussian distribution for spray
+      let offsetX = randomGaussian(0, brushSize * 0.4);
+      let offsetY = randomGaussian(0, brushSize * 0.4);
+
+      // Smaller particles
+      let particleSize = random(brushSize * 0.02, brushSize * 0.08);
+
+      // Lower alpha for build-up effect
+      let particleAlpha = random(150, 200);
       let c = color(baseColor);
       c.setAlpha(particleAlpha);
       pg.fill(c);
       pg.ellipse(x + offsetX, y + offsetY, particleSize, particleSize);
     }
 
-    let highlightCount = brushSize * 0.1;
-    for (let j = 0; j < highlightCount; j++) {
-        let offsetX = randomGaussian(0, brushSize * 0.2);
-        let offsetY = randomGaussian(0, brushSize * 0.2);
-        let particleSize = random(brushSize * 0.02, brushSize * 0.1);
-        let particleAlpha = random(20, 70);
-        pg.fill(255, particleAlpha);
+    // Add some random larger droplets
+    if (random() < 0.3) {
+        let offsetX = randomGaussian(0, brushSize * 0.3);
+        let offsetY = randomGaussian(0, brushSize * 0.3);
+        let particleSize = random(brushSize * 0.1, brushSize * 0.15);
+        let c = color(baseColor);
+        c.setAlpha(200);
+        pg.fill(c);
         pg.ellipse(x + offsetX, y + offsetY, particleSize, particleSize);
     }
   }
@@ -216,8 +223,14 @@ function mouseDragged(e) {
   let safeSpeed = constrain(ms, 0.1, 50);
 
   // Spawn Drip
+  // Flow varies with speed: slower = more flow
   let intensity = map(safeSpeed, 0, 30, 1.0, 0.0, true);
-  let spawnChance = (intensity * 0.8) + 0.05;
+
+  // Small randomization as requested
+  intensity += random(-0.1, 0.1);
+  intensity = constrain(intensity, 0, 1);
+
+  let spawnChance = (intensity * 0.5) + 0.02; // Reduced chance overall
   if (random() < spawnChance) {
     let jitterX = random(-brushSize * 0.2, brushSize * 0.2);
     drips.push(new Drip(mouseX + jitterX, mouseY, baseColor, brushSize, intensity));
@@ -247,8 +260,14 @@ class Drip {
     this.width = random(baseWidth * 0.2, baseWidth * 0.5); 
     this.beadSize = this.width * 1.5; 
     
-    let lenMultiplier = map(intensity, 0, 1, 0.2, 1.5);
-    this.maxLen = random(10, 150) * lenMultiplier; 
+    // Shorter drips, varied by intensity and random factor
+    // "Flow should vary slightly depending on brush strokes" -> intensity
+    // "very small amount of randomization" -> random factor
+    let lenMultiplier = map(intensity, 0, 1, 0.5, 1.2);
+    let randomVariation = random(0.8, 1.2);
+
+    // Reduced base max length (was 10-150)
+    this.maxLen = random(10, 50) * lenMultiplier * randomVariation;
     
     this.baseSpeed = random(1, 3); 
     this.len = 0;
