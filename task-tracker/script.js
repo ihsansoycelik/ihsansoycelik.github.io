@@ -37,6 +37,16 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners();
     }
 
+    function addKeyboardSupport(element, callback) {
+        element.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                callback();
+            }
+        });
+    }
+
     function getFilteredTasks() {
         switch (state.currentView) {
             case 'all':
@@ -95,6 +105,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.className = `list-row ${state.currentView === list.id ? 'active' : ''}`;
             li.dataset.id = list.id;
+            li.setAttribute('role', 'button');
+            li.setAttribute('tabindex', '0');
+            if (state.currentView === list.id) {
+                li.setAttribute('aria-current', 'true');
+            } else {
+                li.removeAttribute('aria-current');
+            }
 
             const count = state.tasks.filter(t => t.listId === list.id && !t.completed).length;
 
@@ -109,6 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
 
             li.addEventListener('click', () => switchView(list.id));
+            addKeyboardSupport(li, () => switchView(list.id));
             els.userLists.appendChild(li);
         });
 
@@ -116,8 +134,10 @@ document.addEventListener('DOMContentLoaded', () => {
         els.smartCards.forEach(card => {
             if (card.dataset.list === state.currentView) {
                 card.classList.add('active');
+                card.setAttribute('aria-current', 'true');
             } else {
                 card.classList.remove('active');
+                card.removeAttribute('aria-current');
             }
         });
     }
@@ -136,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const taskRow = document.createElement('div');
             taskRow.className = `task-row ${task.completed ? 'completed' : ''}`;
             taskRow.innerHTML = `
-                <div class="check-circle" role="button"></div>
+                <div class="check-circle" role="checkbox" tabindex="0" aria-checked="${task.completed}" aria-label="Toggle completion"></div>
                 <div class="task-content">
                     <input type="text" class="task-text" value="${escapeHtml(task.text)}" readonly>
                     <!-- <div class="task-details">Notes or Date</div> -->
@@ -156,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 toggleTask(task.id);
             });
+            addKeyboardSupport(check, () => toggleTask(task.id));
 
             const deleteBtn = taskRow.querySelector('.delete-btn');
             deleteBtn.addEventListener('click', (e) => {
@@ -213,6 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Smart Cards
         els.smartCards.forEach(card => {
             card.addEventListener('click', () => switchView(card.dataset.list));
+            addKeyboardSupport(card, () => switchView(card.dataset.list));
         });
 
         // New Task Interaction

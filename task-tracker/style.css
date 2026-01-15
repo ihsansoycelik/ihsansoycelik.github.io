@@ -22,8 +22,16 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    outline: none;
     -webkit-font-smoothing: antialiased;
+}
+
+*:focus {
+    outline: none;
+}
+
+*:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
 }
 
 body {
