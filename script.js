@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
             url: "crinkle-cut-fry/index.html",
             date: "2023-10-27",
             author: "Me",
-            tech: "Vanilla JS"
+            tech: "Vanilla JS",
+            backgroundColor: "#FDEE3F"
         },
         {
             title: "Kinetic-Poster-1",
@@ -17,7 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
             url: "kinetic-poster-1/index.html",
             date: "2023-09-22",
             author: "Me",
-            tech: "p5.js"
+            tech: "p5.js",
+            backgroundColor: "#0022AA"
         },
         {
             title: "Kinetic-Poster-2",
@@ -26,7 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
             url: "kinetic-poster-2/index.html",
             date: "2023-08-05",
             author: "Me",
-            tech: "p5.js"
+            tech: "p5.js",
+            backgroundColor: "#111111"
         },
         {
             title: "Interactive-Graffiti-1",
@@ -35,7 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
             url: "Interactive-graffiti-1/index.html",
             date: "2023-07-12",
             author: "Me",
-            tech: "p5.js"
+            tech: "p5.js",
+            backgroundColor: "#0022AA"
         }
     ];
 
@@ -69,6 +73,46 @@ document.addEventListener('DOMContentLoaded', () => {
     svgLayer.id = "connections-layer";
     gridContainer.appendChild(svgLayer);
 
+    // Theme Colors
+    const defaultBgColor = '#FFFFFF';
+    const defaultTextColor = '#000000';
+
+    // Function to update page theme based on project background
+    function updatePageTheme(bgColor) {
+        const root = document.documentElement;
+
+        // Calculate luminance to determine if we need light or dark text
+        const hex = bgColor.replace('#', '');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+
+        // Calculate relative luminance using sRGB formula
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+        // If luminance is low (dark background), use light text, otherwise dark text
+        const textColor = luminance < 0.5 ? '#FFFFFF' : '#000000';
+        const secondaryTextColor = luminance < 0.5 ? '#999999' : '#999999';
+        const activeBgColor = luminance < 0.5 ? 'rgba(255, 255, 255, 0.2)' : '#E0E0E0';
+        const grainBlendMode = luminance < 0.5 ? 'screen' : 'multiply';
+
+        // Update CSS variables
+        root.style.setProperty('--bg-color', bgColor);
+        root.style.setProperty('--text-color', textColor);
+        root.style.setProperty('--secondary-text-color', secondaryTextColor);
+        root.style.setProperty('--active-bg-color', activeBgColor);
+        root.style.setProperty('--grain-blend-mode', grainBlendMode);
+
+        // Redraw lines with new color
+        drawLines();
+    }
+
+    // Function to reset theme to default
+    function resetPageTheme() {
+        updatePageTheme(defaultBgColor);
+    }
+
+
     // Function to render projects
     function renderProjects(projectsToRender) {
         projectListContainer.innerHTML = ''; // Clear current list
@@ -95,6 +139,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (url && url !== '#' && url !== '') {
                     projectFrame.src = url;
                     projectFrame.style.display = 'block';
+
+                    // Change background color to match project
+                    if (project.backgroundColor) {
+                        updatePageTheme(project.backgroundColor);
+                    }
                 }
             });
 

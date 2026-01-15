@@ -10,7 +10,8 @@
     --text-color: #000000;
     --secondary-text-color: #999;
     --active-bg-color: #E0E0E0;
-    --grain-blend-mode: multiply; /* multiply for light bg, screen/overlay for dark */
+    --grain-blend-mode: multiply;
+    /* multiply for light bg, screen/overlay for dark */
 }
 
 body {
@@ -35,7 +36,7 @@ a {
     cursor: pointer;
     padding: 4px 8px;
     /* Background padding */
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, color 0.3s;
     position: relative;
     /* For z-index if needed */
     z-index: 2;
@@ -45,7 +46,8 @@ a {
 #fixed-nav-wrapper {
     position: relative;
     width: 100%;
-    background-color: var(--bg-color); /* Matches body bg for monoblock look */
+    background-color: var(--bg-color);
+    /* Matches body bg for monoblock look */
     transition: background-color 0.3s;
 }
 
@@ -133,16 +135,26 @@ a {
 
 .num {
     font-size: 11px;
-    color: #999;
-    width: 25px;
-    margin-right: 5px;
+    color: var(--secondary-text-color);
+    width: 20px;
+    margin-right: 0;
     display: inline-block;
+    transition: color 0.3s;
+}
+
+.separator {
+    font-size: 11px;
+    color: var(--secondary-text-color);
+    margin: 0 5px;
+    display: inline-block;
+    transition: color 0.3s;
 }
 
 /* Disabled State */
 .nav-link.disabled {
-    color: #999 !important;
+    color: var(--secondary-text-color) !important;
     cursor: not-allowed;
+    transition: color 0.3s;
 }
 
 /* Active State */
@@ -175,9 +187,10 @@ a {
 
 .project-meta {
     display: inline-block;
-    color: #999;
+    color: var(--secondary-text-color);
     font-size: 12px;
     margin-left: 20px;
+    transition: color 0.3s;
 }
 
 /* Contact Column */
@@ -333,11 +346,12 @@ body::before {
 .site-footer {
     padding: 30px 40px;
     font-size: 11px;
-    color: #999;
+    color: var(--secondary-text-color);
     text-align: center;
     position: relative;
     width: 100%;
     margin-top: 40px;
+    transition: color 0.3s;
     /* Gap from content */
 }
 
