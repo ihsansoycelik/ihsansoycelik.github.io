@@ -74,6 +74,12 @@ function setup() {
   
   // Colors
   colorBg = select('#col-bg');
+  // Sync background color
+  document.body.style.backgroundColor = colorBg.value();
+  colorBg.input(() => {
+    document.body.style.backgroundColor = colorBg.value();
+  });
+
   colorFace = select('#col-face');
   colorShadow = select('#col-shadow');
   colorOverlayText = select('#col-overlay-text');
