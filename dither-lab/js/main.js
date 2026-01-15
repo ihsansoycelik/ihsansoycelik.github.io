@@ -41,18 +41,9 @@ function handleStateChange(newState) {
     const isCPU = CPU_ALGOS.includes(algo);
     const isVideo = newState.image.type === 'video';
 
-    // Toggle warning if video + CPU algo selected
-    const warningEl = document.getElementById('video-cpu-warning');
-    if (warningEl) {
-        if (isVideo && isCPU) {
-            warningEl.classList.remove('hidden');
-        } else {
-            warningEl.classList.add('hidden');
-        }
-    }
-
-    if (isVideo) {
-        // Video always uses GPU for real-time preview
+    if (newState.image.type === 'video') {
+        // Video always uses GPU for real-time preview.
+        // If a CPU algorithm is selected, the render loop handles the fallback to Bayer.
         return;
     }
 
@@ -235,11 +226,22 @@ function loop() {
 
     // Video Handling
     if (state.image.type === 'video') {
-         // Always render video frames using GPU (fallback to Bayer/None if CPU algo selected)
+         // Always render video frames using GPU
          loadTexture(state.image.source);
 
-         // Get effective state (with fallback if needed)
-         const renderState = getEffectiveRenderState(state);
+         // Video playback requires real-time processing, which is not possible with CPU-bound algorithms (like Error Diffusion).
+         // We automatically fallback to Ordered Dithering (Bayer 4x4) which runs on the GPU.
+         const isCPU = CPU_ALGOS.includes(state.settings.algorithm);
+         let renderState = state;
+         if (isCPU) {
+             renderState = {
+                 ...state,
+                 settings: {
+                     ...state.settings,
+                     algorithm: 'bayer-4'
+                 }
+             };
+         }
          render(renderState, false);
          return;
     }
