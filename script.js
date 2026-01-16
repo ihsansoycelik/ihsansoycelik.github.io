@@ -1,4 +1,125 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // 1. Determine Root Path
+    // Identify the script tag that loaded this file to find relative path to root
+    const scripts = document.getElementsByTagName('script');
+    let rootPath = './';
+    for (let script of scripts) {
+        if (script.src.includes('script.js')) {
+            const url = new URL(script.src, window.location.href);
+            // If the script is loaded as "../script.js", the pathname in URL might not reflect it directly if resolved.
+            // But we can check the attribute.
+            const srcAttr = script.getAttribute('src');
+            if (srcAttr && srcAttr.includes('../')) {
+                rootPath = '../';
+            }
+        }
+    }
+
+    // 2. Inject CSS if missing
+    if (!document.querySelector(`link[href*="style.css"]`)) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = `${rootPath}style.css`;
+        document.head.appendChild(link);
+    }
+
+    // 3. Inject Navigation if missing
+    if (!document.getElementById('fixed-nav-wrapper')) {
+        const navHTML = `
+        <div id="fixed-nav-wrapper">
+            <header class="site-header">
+                <h1>İhsan Soyçelik</h1>
+            </header>
+
+            <div class="grid-container">
+                <!-- Column 1: Main Navigation -->
+                <nav class="column nav-column">
+                    <h2 class="column-header">Type</h2>
+                    <ul class="tree-list" id="type-list">
+                        <li><span class="num">01</span><span class="separator">-</span><a href="#" class="nav-link active"
+                                data-filter="all" aria-current="page">Creative Coding</a></li>
+                        <li><span class="num">02</span><span class="separator">;</span><a href="#" class="nav-link disabled"
+                                data-category="sketches" aria-disabled="true" tabindex="-1">Graphic Design</a></li>
+                        <li><span class="num">03</span><span class="separator">;</span><a href="#" class="nav-link disabled"
+                                data-category="ui-design" aria-disabled="true" tabindex="-1">UI Design</a></li>
+                        <li><span class="num">04</span><span class="separator">;</span><a href="#" class="nav-link disabled"
+                                data-category="other" aria-disabled="true" tabindex="-1">Other Works</a></li>
+                    </ul>
+                </nav>
+
+                <!-- Column 2: Specific Tags/Topics -->
+                <aside class="column filter-column">
+                    <h2 class="column-header">Topic</h2>
+                    <ul class="tree-list" id="topic-list">
+                        <li><span class="num">01</span> <a href="#" class="tag-link active" data-tag="all"
+                                aria-current="page">All</a></li>
+                        <li><span class="num">02</span> <a href="#" class="tag-link" data-tag="Generative">Generative</a>
+                        </li>
+                        <li><span class="num">03</span> <a href="#" class="tag-link" data-tag="Physics">Physics</a></li>
+                        <li><span class="num">04</span> <a href="#" class="tag-link" data-tag="Noise">Noise</a></li>
+                        <li><span class="num">05</span> <a href="#" class="tag-link" data-tag="Interaction">Interaction</a>
+                        </li>
+                    </ul>
+                </aside>
+
+                <!-- Column 3: Project List -->
+                <main class="column project-column">
+                    <h2 class="column-header">Projects</h2>
+                    <div id="project-list" class="tree-list">
+                        <!-- Projects will be injected here -->
+                    </div>
+                </main>
+
+                <!-- Column 4: Contact Info -->
+                <aside class="column contact-column">
+                    <ul class="contact-list">
+                        <li>
+                            <a href="https://soycelik.com" target="_blank" rel="noopener noreferrer" class="contact-link"
+                                aria-label="Visit my portfolio soycelik.com (opens in new tab)">
+                                Visit my portfolio soycelik.com
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                    <line x1="7" y1="17" x2="17" y2="7"></line>
+                                    <polyline points="7 7 17 7 17 17"></polyline>
+                                </svg>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="mailto:contact@soycelik.com" class="contact-link">
+                                contact@soycelik.com
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z">
+                                    </path>
+                                    <polyline points="22,6 12,13 2,6"></polyline>
+                                </svg>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="https://instagram.com/isoycelik" target="_blank" rel="noopener noreferrer"
+                                class="contact-link" aria-label="isoycelik on Instagram (opens in new tab)">
+                                isoycelik
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                                </svg>
+                            </a>
+                        </li>
+                    </ul>
+                </aside>
+            </div>
+        </div>
+        `;
+
+        // Use a temporary container to parse HTML string
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = navHTML;
+        const navElement = tempDiv.firstElementChild;
+        document.body.prepend(navElement);
+    }
+
     // 4. Data Management: Constant array of projects
     const projects = [
         {
@@ -47,25 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.nav-link');
     const tagLinks = document.querySelectorAll('.tag-link');
     const gridContainer = document.querySelector('.grid-container');
-    const projectFrame = document.getElementById('project-frame');
-    const projectViewer = document.getElementById('project-viewer');
-
-    // Iframe Auto-Resize Logic
-    projectFrame.addEventListener('load', () => {
-        try {
-            const iframeDoc = projectFrame.contentDocument || projectFrame.contentWindow.document;
-            if (iframeDoc) {
-                // 1. Auto-Resize
-                projectFrame.style.height = iframeDoc.body.scrollHeight + 'px';
-                const ro = new ResizeObserver(() => {
-                    projectFrame.style.height = iframeDoc.body.scrollHeight + 'px';
-                });
-                ro.observe(iframeDoc.body);
-            }
-        } catch (e) {
-            console.warn('Cannot auto-resize iframe or access content due to limitations', e);
-        }
-    });
 
     // Create SVG Layer
     const svgNS = "http://www.w3.org/2000/svg";
@@ -75,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Theme Colors
     const defaultBgColor = '#FFFFFF';
-    const defaultTextColor = '#000000';
 
     // Function to update page theme based on project background
     function updatePageTheme(bgColor) {
@@ -103,15 +204,12 @@ document.addEventListener('DOMContentLoaded', () => {
         root.style.setProperty('--active-bg-color', activeBgColor);
         root.style.setProperty('--grain-blend-mode', grainBlendMode);
 
+        // Also enforce on body directly to handle potential overrides or timing
+        document.body.style.backgroundColor = bgColor;
+
         // Redraw lines with new color
         drawLines();
     }
-
-    // Function to reset theme to default
-    function resetPageTheme() {
-        updatePageTheme(defaultBgColor);
-    }
-
 
     // Function to render projects
     function renderProjects(projectsToRender) {
@@ -128,24 +226,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Link wrapper
             const link = document.createElement('a');
-            link.href = project.url;
+            // Resolve URL based on rootPath
+            link.href = rootPath + project.url;
             link.className = 'project-link'; // For selection
-
-            // Intercept Click
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const url = project.url;
-
-                if (url && url !== '#' && url !== '') {
-                    projectFrame.src = url;
-                    projectFrame.style.display = 'block';
-
-                    // Change background color to match project
-                    if (project.backgroundColor) {
-                        updatePageTheme(project.backgroundColor);
-                    }
-                }
-            });
 
             // Title
             const titleSpan = document.createElement('span');
@@ -166,6 +249,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial Render
     renderProjects(projects);
+
+    // Set Theme based on current URL
+    function initializeTheme() {
+        const currentPath = window.location.pathname;
+        let foundProject = null;
+
+        // Simple matching of URL
+        for (let p of projects) {
+            // Check if current path contains the project url folder
+            // e.g. /kinetic-poster-1/index.html contains kinetic-poster-1
+            const projectFolder = p.url.split('/')[0];
+            if (currentPath.includes(projectFolder)) {
+                foundProject = p;
+                break;
+            }
+        }
+
+        if (foundProject && foundProject.backgroundColor) {
+            updatePageTheme(foundProject.backgroundColor);
+        } else {
+            updatePageTheme(defaultBgColor);
+        }
+    }
+
+    initializeTheme();
 
     // Drawing Logic
     function drawLines() {

@@ -14,9 +14,7 @@ body {
   background-color: var(--bg-color);
   color: var(--text-color);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  /* Flex removed for nav injection */
   min-height: 100vh;
   box-sizing: border-box;
 }
@@ -31,6 +29,7 @@ body {
   max-width: 1400px;
   flex-wrap: wrap;
   justify-content: center;
+  margin: 0 auto; /* Center the container */
 }
 
 #canvas-container {
