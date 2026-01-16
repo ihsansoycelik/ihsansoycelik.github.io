@@ -40,6 +40,16 @@ document.addEventListener('DOMContentLoaded', () => {
             author: "Me",
             tech: "p5.js",
             backgroundColor: "#0022AA"
+        },
+        {
+            title: "FPS Game",
+            tag: "Interaction",
+            category: "Games",
+            url: "fps-game/index.html",
+            date: "2024-05-20",
+            author: "Me",
+            tech: "Three.js",
+            backgroundColor: "#111111"
         }
     ];
 
