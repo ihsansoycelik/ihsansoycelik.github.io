@@ -49,6 +49,7 @@ a {
     background-color: var(--bg-color);
     /* Matches body bg for monoblock look */
     transition: background-color 0.3s;
+    z-index: 1001; /* Ensure above project canvases */
 }
 
 /* Header */

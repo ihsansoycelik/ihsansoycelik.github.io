@@ -1,3 +1,11 @@
-127.0.0.1 - - [14/Jan/2026 23:59:27] "GET / HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jan/2026 23:59:27] "GET /style.css HTTP/1.1" 200 -
-127.0.0.1 - - [14/Jan/2026 23:59:27] "GET /script.js HTTP/1.1" 200 -
+127.0.0.1 - - [16/Jan/2026 00:17:27] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [16/Jan/2026 00:17:27] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [16/Jan/2026 00:17:27] "GET /script.js HTTP/1.1" 200 -
+127.0.0.1 - - [16/Jan/2026 00:17:29] "GET /kinetic-poster-1/index.html HTTP/1.1" 200 -
+127.0.0.1 - - [16/Jan/2026 00:17:29] "GET /kinetic-poster-1/sketch.js HTTP/1.1" 200 -
+127.0.0.1 - - [16/Jan/2026 00:17:29] "GET /kinetic-poster-1/assets/RubikMonoOne-Regular.ttf HTTP/1.1" 200 -
+127.0.0.1 - - [16/Jan/2026 00:17:29] "GET /kinetic-poster-1/assets/Anton-Regular.ttf HTTP/1.1" 200 -
+127.0.0.1 - - [16/Jan/2026 00:17:32] "GET /crinkle-cut-fry/index.html HTTP/1.1" 200 -
+127.0.0.1 - - [16/Jan/2026 00:17:34] "GET /Interactive-graffiti-1/index.html HTTP/1.1" 200 -
+127.0.0.1 - - [16/Jan/2026 00:17:34] "GET /Interactive-graffiti-1/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [16/Jan/2026 00:17:34] "GET /Interactive-graffiti-1/sketch.js HTTP/1.1" 200 -
