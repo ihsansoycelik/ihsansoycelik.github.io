@@ -177,10 +177,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Drawing Logic
     function drawLines() {
-        // Clear existing lines
-        while (svgLayer.firstChild) {
-            svgLayer.removeChild(svgLayer.firstChild);
-        }
+        // Clear existing lines with fade out
+        const oldLines = Array.from(svgLayer.children);
+        oldLines.forEach(line => {
+            if (!line.classList.contains('removing')) {
+                line.classList.add('removing');
+                setTimeout(() => {
+                    if (line.parentNode === svgLayer) {
+                        svgLayer.removeChild(line);
+                    }
+                }, 400);
+            }
+        });
 
         // Mobile check (basic)
         if (window.innerWidth <= 768) return;
@@ -190,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const visibleTags = document.querySelectorAll('.tag-link');
 
         if (activeNav && visibleTags.length > 0) {
-            drawFork(activeNav, visibleTags);
+            drawFork(activeNav, visibleTags, 0);
         }
 
         // 2. Draw from Active Tag (Col 2) to Projects (Col 3)
@@ -198,11 +206,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const visibleProjects = document.querySelectorAll('.project-link');
 
         if (activeTag && visibleProjects.length > 0) {
-            drawFork(activeTag, visibleProjects);
+            drawFork(activeTag, visibleProjects, 1);
         }
     }
 
-    function drawFork(sourceEl, destNodeList) {
+    function drawFork(sourceEl, destNodeList, delayIndex = 0) {
         const containerRect = gridContainer.getBoundingClientRect();
         const sourceRect = sourceEl.getBoundingClientRect();
 
@@ -260,6 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
             path.setAttribute("stroke-width", "1");
             path.setAttribute("fill", "none");
             path.classList.add('connection-line');
+            path.style.setProperty('--delay-index', delayIndex);
             svgLayer.appendChild(path);
             return;
         }
@@ -315,6 +324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         path.setAttribute("stroke-width", "1");
         path.setAttribute("fill", "none");
         path.classList.add('connection-line');
+        path.style.setProperty('--delay-index', delayIndex);
         svgLayer.appendChild(path);
     }
 
