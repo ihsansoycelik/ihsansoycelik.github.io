@@ -244,12 +244,11 @@ canvas {
 }
 
 .warning-box {
-    margin-top: 8px;
-    background-color: rgba(255, 150, 0, 0.1);
-    border: 1px solid rgba(255, 150, 0, 0.3);
-    color: #ffb74d;
+    background-color: #ffcc00;
+    color: #000;
     padding: 8px;
     border-radius: 4px;
+    margin-top: 8px;
     font-size: 11px;
-    line-height: 1.4;
+    font-weight: 600;
 }
