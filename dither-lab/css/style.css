@@ -242,3 +242,13 @@ canvas {
 .preview-area.drag-over {
     border: 2px dashed var(--accent);
 }
+
+.warning-box {
+    background-color: #ffcc00;
+    color: #000;
+    padding: 8px;
+    border-radius: 4px;
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 600;
+}

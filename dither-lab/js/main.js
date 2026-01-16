@@ -39,6 +39,7 @@ export function handleWorkerResult(result) {
 function handleStateChange(newState) {
     const algo = newState.settings.algorithm;
     const isCPU = CPU_ALGOS.includes(algo);
+    const isVideo = newState.image.type === 'video';
 
     if (newState.image.type === 'video') {
         // Video always uses GPU for real-time preview.
