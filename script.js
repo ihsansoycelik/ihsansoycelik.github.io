@@ -2,13 +2,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Data Management: Constant array of projects
     const projects = [
         {
+            title: "Crinkle-Cut Type",
+            tag: "Interaction",
+            category: "Posters",
+            url: "crinkle-cut-fry/index.html",
+            date: "2023-10-27",
+            author: "Me",
+            tech: "Vanilla JS",
+            backgroundColor: "#FDEE3F"
+        },
+        {
             title: "Kinetic-Poster-1",
             tag: "Generative",
             category: "Posters",
             url: "kinetic-poster-1/index.html",
             date: "2023-09-22",
             author: "Me",
-            tech: "p5.js"
+            tech: "p5.js",
+            backgroundColor: "#0022AA"
         },
         {
             title: "Kinetic-Poster-2",
@@ -17,7 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
             url: "kinetic-poster-2/index.html",
             date: "2023-08-05",
             author: "Me",
-            tech: "p5.js"
+            tech: "p5.js",
+            backgroundColor: "#111111"
         },
         {
             title: "Interactive-Graffiti-1",
@@ -26,7 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
             url: "Interactive-graffiti-1/index.html",
             date: "2023-07-12",
             author: "Me",
-            tech: "p5.js"
+            tech: "p5.js",
+            backgroundColor: "#0022AA"
         }
     ];
 
@@ -36,9 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const gridContainer = document.querySelector('.grid-container');
     const projectFrame = document.getElementById('project-frame');
     const projectViewer = document.getElementById('project-viewer');
+    const loadingSpinner = document.getElementById('loading-spinner');
 
-    // Iframe Auto-Resize & Theme Logic
+    // Iframe Auto-Resize Logic
     projectFrame.addEventListener('load', () => {
+        // Hide spinner and show frame
+        loadingSpinner.style.display = 'none';
+        projectFrame.style.display = 'block';
+
         try {
             const iframeDoc = projectFrame.contentDocument || projectFrame.contentWindow.document;
             if (iframeDoc) {
@@ -48,70 +66,57 @@ document.addEventListener('DOMContentLoaded', () => {
                     projectFrame.style.height = iframeDoc.body.scrollHeight + 'px';
                 });
                 ro.observe(iframeDoc.body);
-
-                // 2. Theme Extraction
-                const bgColor = getComputedStyle(iframeDoc.body).backgroundColor;
-                applyTheme(bgColor);
-
-                // 3. Watch for Theme Changes
-                const observer = new MutationObserver(() => {
-                    const newBgColor = getComputedStyle(iframeDoc.body).backgroundColor;
-                    applyTheme(newBgColor);
-                });
-                observer.observe(iframeDoc.body, { attributes: true, attributeFilter: ['style', 'class'] });
             }
         } catch (e) {
             console.warn('Cannot auto-resize iframe or access content due to limitations', e);
         }
     });
 
-    // Theme Helper Functions
-    function getContrastColor(rgbColor) {
-        if (!rgbColor) return '#000000';
-
-        // Match rgb or rgba
-        const match = rgbColor.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-        if (match) {
-            const r = parseInt(match[1]);
-            const g = parseInt(match[2]);
-            const b = parseInt(match[3]);
-
-            // YIQ equation
-            const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-            return (yiq >= 128) ? '#000000' : '#FFFFFF';
-        }
-        return '#000000';
-    }
-
-    function applyTheme(bgColor) {
-        const root = document.documentElement;
-
-        // Handle transparency or default
-        if (bgColor === 'rgba(0, 0, 0, 0)' || bgColor === 'transparent') {
-            bgColor = '#FFFFFF';
-        }
-
-        const contrastColor = getContrastColor(bgColor);
-
-        root.style.setProperty('--bg-color', bgColor);
-        root.style.setProperty('--text-color', contrastColor);
-
-        if (contrastColor === '#FFFFFF') {
-            // Dark Mode
-            root.style.setProperty('--active-bg-color', 'rgba(255, 255, 255, 0.2)');
-            root.style.setProperty('--grain-blend-mode', 'overlay');
-        } else {
-            // Light Mode
-            root.style.setProperty('--active-bg-color', '#E0E0E0');
-            root.style.setProperty('--grain-blend-mode', 'multiply');
-        }
-    }
-
     // Create SVG Layer
     const svgNS = "http://www.w3.org/2000/svg";
     const svgLayer = document.createElementNS(svgNS, "svg");
     svgLayer.id = "connections-layer";
     gridContainer.appendChild(svgLayer);
+
+    // Theme Colors
+    const defaultBgColor = '#FFFFFF';
+    const defaultTextColor = '#000000';
+
+    // Function to update page theme based on project background
+    function updatePageTheme(bgColor) {
+        const root = document.documentElement;
+
+        // Calculate luminance to determine if we need light or dark text
+        const hex = bgColor.replace('#', '');
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+
+        // Calculate relative luminance using sRGB formula
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+        // If luminance is low (dark background), use light text, otherwise dark text
+        const textColor = luminance < 0.5 ? '#FFFFFF' : '#000000';
+        const secondaryTextColor = luminance < 0.5 ? '#999999' : '#999999';
+        const activeBgColor = luminance < 0.5 ? 'rgba(255, 255, 255, 0.2)' : '#E0E0E0';
+        const grainBlendMode = luminance < 0.5 ? 'screen' : 'multiply';
+
+        // Update CSS variables
+        root.style.setProperty('--bg-color', bgColor);
+        root.style.setProperty('--text-color', textColor);
+        root.style.setProperty('--secondary-text-color', secondaryTextColor);
+        root.style.setProperty('--active-bg-color', activeBgColor);
+        root.style.setProperty('--grain-blend-mode', grainBlendMode);
+
+        // Redraw lines with new color
+        drawLines();
+    }
+
+    // Function to reset theme to default
+    function resetPageTheme() {
+        updatePageTheme(defaultBgColor);
+    }
+
 
     // Function to render projects
     function renderProjects(projectsToRender) {
@@ -137,8 +142,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const url = project.url;
 
                 if (url && url !== '#' && url !== '') {
+                    // Show spinner, hide frame until loaded
+                    loadingSpinner.style.display = 'block';
+                    projectFrame.style.display = 'none';
+
                     projectFrame.src = url;
-                    projectFrame.style.display = 'block';
+
+                    // Change background color to match project
+                    if (project.backgroundColor) {
+                        updatePageTheme(project.backgroundColor);
+                    }
                 }
             });
 

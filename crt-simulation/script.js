@@ -59,7 +59,7 @@ float noise(vec2 st) {
 vec2 curve(vec2 uv) {
     vec2 centered = uv * 2.0 - 1.0;
 
-    // Correct for aspect ratio to ensure circular distortion (Precise calculation using uResolution)
+    // Correct for aspect ratio to ensure circular distortion (Precise calculation)
     float aspect = uResolution.x / uResolution.y;
 
     // Calculate distance from center in "square" pixel space
@@ -75,7 +75,10 @@ vec2 curve(vec2 uv) {
 // Magnetic Interference
 vec2 magnet(vec2 uv) {
     vec2 diff = uv - uMagPos;
-    float dist = length(diff);
+    float aspect = uResolution.x / uResolution.y;
+    vec2 diffCorrected = diff;
+    diffCorrected.x *= aspect;
+    float dist = length(diffCorrected);
     // Smooth falloff
     float pull = smoothstep(uMagRadius, 0.0, dist);
     // Distort towards/away or swirl?
@@ -112,7 +115,10 @@ void main() {
     // We sample the texture at slightly different coordinates for R, G, B
     float aber = uAberration * 0.005; // Scale down
     // Add distance from center factor for cheap lens blur effect
-    float distFromCenter = distance(uv, vec2(0.5));
+    vec2 d = uv - vec2(0.5);
+    float aspect = uResolution.x / uResolution.y;
+    d.x *= aspect;
+    float distFromCenter = length(d);
     aber *= (1.0 + distFromCenter);
 
     vec4 col;
@@ -168,7 +174,7 @@ let contentLayer;
 let font;
 
 // State
-let params = {
+const defaultParams = {
     text: "SYSTEM MALFUNCTION // SIGNAL LOST // RETRYING...",
     textSpeed: 3,
     textSize: 100,
@@ -186,6 +192,8 @@ let params = {
     vignette: 0.4,
     paused: false
 };
+
+let params = JSON.parse(JSON.stringify(defaultParams));
 
 // Internal animation state
 let textX = 0;
@@ -356,13 +364,29 @@ function setupUI() {
     });
 
     btns.reset.addEventListener('click', () => {
-        // Reset values to defaults (would need to store defaults or hardcode)
-        // For simplicity, just reload page or set a few keys
-        params.curve = 0.15;
-        inputs.curve.value = 0.15;
-        params.magStrength = 0.3;
-        inputs.magStr.value = 0.3;
-        // ... extend as needed
+        // Reset params
+        params = JSON.parse(JSON.stringify(defaultParams));
+
+        // Update Inputs
+        inputs.text.value = params.text;
+        inputs.speed.value = params.textSpeed;
+        inputs.size.value = params.textSize;
+        inputs.font.value = params.textFont;
+        inputs.color.value = params.textColor;
+
+        inputs.magStr.value = params.magStrength;
+        inputs.magRad.value = params.magRadius;
+
+        inputs.curve.value = params.curve;
+        inputs.scan.value = params.scanlines;
+        inputs.glow.value = params.glow;
+        inputs.noise.value = params.noise;
+        inputs.aber.value = params.aberration;
+        inputs.vig.value = params.vignette;
+
+        // Update Buttons / Toggles
+        btns.pause.textContent = params.paused ? "Play" : "Pause";
+        btns.dir.textContent = params.direction === 1 ? "Right to Left" : "Left to Right";
     });
 
     // Panel Toggle

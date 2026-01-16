@@ -41,8 +41,8 @@ const sketch = (p) => {
     let css = `
       #v1 #main-container { display: flex; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #ffffff; }
       #v1 #canvas-container { flex: 1; display: flex; justify-content: center; align-items: center; background: ${params.bgColor}; position: relative; overflow: hidden; }
-      #v1 #sidebar { width: 320px; background: rgba(30, 30, 30, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-left: 1px solid rgba(255, 255, 255, 0.1); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; flex-shrink: 0; box-sizing: border-box; z-index: 10; }
-      #v1 .control-section { background: rgba(255, 255, 255, 0.05); border-radius: 10px; overflow: hidden; }
+      #v1 #sidebar { width: 320px; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-left: 1px solid rgba(255, 255, 255, 0.1); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; flex-shrink: 0; box-sizing: border-box; z-index: 10; }
+      #v1 .control-section { background: rgba(255, 255, 255, 0.08); border-radius: 10px; overflow: hidden; }
       #v1 .section-header { padding: 12px 14px; font-weight: 500; font-size: 13px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
       #v1 .section-content { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
     `;
@@ -60,7 +60,7 @@ const sketch = (p) => {
 
     setupSidebar(sidebar);
     document.body.style.backgroundColor = params.bgColor;
-    
+
     for (let key in fontUrls) {
       p.loadFont(fontUrls[key], (loadedFont) => {
         fonts[key] = loadedFont;
@@ -120,17 +120,17 @@ const sketch = (p) => {
   function generateGeometry() {
     fontData = [];
     if (!currentFont) return;
-    
+
     let targetW = p.width * 0.8;
     let testSize = 100;
     let maxW = 0;
     for (let str of textLines) {
-        let b = currentFont.textBounds(str, 0, 0, testSize);
-        if (b.w > maxW) maxW = b.w;
+      let b = currentFont.textBounds(str, 0, 0, testSize);
+      if (b.w > maxW) maxW = b.w;
     }
     let scaleFactor = targetW / maxW;
     fontSize = testSize * scaleFactor;
-    
+
     let totalH = textLines.length * fontSize;
     let startY = (p.height / 2) - (totalH / 2) + (fontSize * 0.75);
 
@@ -148,7 +148,7 @@ const sketch = (p) => {
 
       for (let j = 1; j < pts.length; j++) {
         let pt = pts[j];
-        let prev = pts[j-1];
+        let prev = pts[j - 1];
         if (p.dist(prev.x, prev.y, pt.x, pt.y) > 20) {
           lineContours.push(currentContour);
           currentContour = [];
@@ -192,7 +192,7 @@ const sketch = (p) => {
   }
 
   p.remove = () => {
-      mainContainer.remove();
-      document.body.style.backgroundColor = '#111';
+    mainContainer.remove();
+    document.body.style.backgroundColor = '#111';
   }
 };
