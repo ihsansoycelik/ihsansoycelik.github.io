@@ -111,6 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
             li.addEventListener('click', () => switchView(list.id));
             els.userLists.appendChild(li);
         });
+    }
 
         // Update Smart Cards Active State
         els.smartCards.forEach(card => {
