@@ -34,7 +34,7 @@ body {
 }
 
 #canvas-container {
-  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
   border-radius: 4px;
   overflow: hidden;
   border: 1px solid #333;
@@ -60,7 +60,9 @@ h2 {
 
 /* Section Styling */
 .control-section {
-  background-color: var(--panel-bg);
+  background-color: rgba(28, 28, 30, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 12px;
   padding: 16px;
   border: 1px solid var(--panel-border);
@@ -93,7 +95,8 @@ h2 {
 }
 
 /* Inputs */
-input[type="text"], select {
+input[type="text"],
+select {
   background: var(--input-bg);
   border: none;
   border-radius: 6px;
@@ -105,7 +108,8 @@ input[type="text"], select {
   outline: none;
 }
 
-input[type="text"]:focus, select:focus {
+input[type="text"]:focus,
+select:focus {
   background: #3a3a3c;
 }
 
@@ -122,7 +126,7 @@ input[type="range"]::-webkit-slider-thumb {
   width: 18px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   margin-top: -7px;
   cursor: pointer;
 }
@@ -163,6 +167,7 @@ input[type="color"]::-webkit-color-swatch {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+
 .control-grid input {
   width: 100%;
   box-sizing: border-box;
@@ -217,14 +222,14 @@ input[type="color"]::-webkit-color-swatch {
   background-color: white;
   transition: .3s;
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-input:checked + .slider {
+input:checked+.slider {
   background-color: #30d158;
 }
 
-input:checked + .slider:before {
+input:checked+.slider:before {
   transform: translateX(16px);
 }
 
@@ -233,7 +238,8 @@ input:checked + .slider:before {
 .section-content {
   overflow: hidden;
   transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
-  max-height: 500px; /* Arbitrary large height */
+  max-height: 500px;
+  /* Arbitrary large height */
   opacity: 1;
 }
 
@@ -250,9 +256,11 @@ details summary {
   list-style: none;
   outline: none;
 }
+
 details summary::-webkit-details-marker {
   display: none;
 }
+
 details summary h3:after {
   content: ' ›';
   display: inline-block;
@@ -260,6 +268,7 @@ details summary h3:after {
   transition: transform 0.2s;
   margin-left: 5px;
 }
+
 details[open] summary h3:after {
   transform: rotate(270deg);
 }

@@ -85,11 +85,16 @@ async function exportVideoOffline(state) {
     try {
         loadingText.innerText = "Loading FFmpeg...";
         // Load FFmpeg
-        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-        await ffmpeg.load({
-            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-        });
+        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd';
+        try {
+            await ffmpeg.load({
+                coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+                wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+            });
+        } catch (e) {
+            console.error("FFmpeg load error:", e);
+            throw new Error("Failed to load FFmpeg. Check network connection or browser compatibility.");
+        }
 
         const fps = 30; // Target FPS
         const duration = video.duration;
@@ -164,12 +169,10 @@ async function exportVideoOffline(state) {
         link.click();
 
         // Cleanup
-        /*
         for (let i = 0; i < totalFrames; i++) {
             await ffmpeg.deleteFile(`input_${i}.png`);
         }
         await ffmpeg.deleteFile('output.mp4');
-        */
 
     } catch (e) {
         console.error(e);
