@@ -17,13 +17,19 @@ let brushSize = 25;
 let dripSpeed = 1.0;
 let gradientEnabled = false;
 let currentGradient = 'neon';
+let isEraser = false;
+let undoStack = [];
+const MAX_UNDO = 10;
 
 // Gradient Palettes (Arrays of colors)
 const GRADIENTS = {
   neon: ['#CCFF00', '#FF0099', '#00FFFF'],
   fire: ['#FF0000', '#FF9900', '#FFFF00'],
   ocean: ['#0000FF', '#0099FF', '#00FFFF'],
-  bw: ['#000000', '#888888', '#FFFFFF']
+  bw: ['#000000', '#888888', '#FFFFFF'],
+  plasma: ['#663399', '#FF4500', '#FFD700'],
+  forest: ['#2E8B57', '#556B2F', '#DAA520'],
+  sunset: ['#4B0082', '#DC143C', '#FF8C00']
 };
 
 function setup() {
@@ -111,10 +117,47 @@ function setupUI() {
   // Brush
   bind('brush-size', 'input', (e) => brushSize = parseFloat(e.target.value));
   bind('drip-speed', 'input', (e) => dripSpeed = parseFloat(e.target.value));
+  bind('eraser-toggle', 'change', (e) => isEraser = e.target.checked);
+
   bind('btn-clear', 'click', () => {
+    saveState(); // Save before clearing so user can undo clear
     pg.clear();
     drips = [];
+    splats = [];
   });
+
+  bind('btn-undo', 'click', performUndo);
+
+  bind('btn-save', 'click', () => {
+     saveCanvas('graffiti-art', 'png');
+  });
+}
+
+function saveState() {
+  if (undoStack.length >= MAX_UNDO) {
+    undoStack.shift();
+  }
+  // pg.get() creates a p5.Image copy of the buffer
+  undoStack.push(pg.get());
+}
+
+function performUndo() {
+  if (undoStack.length > 0) {
+    let prevImg = undoStack.pop();
+    pg.clear();
+    pg.image(prevImg, 0, 0);
+    // Clear active particles to prevent them from drawing over restored state
+    drips = [];
+    splats = [];
+  }
+}
+
+function mousePressed(e) {
+  // Save state on start of stroke
+  if (e && e.target && (e.target.closest('#sidebar') || e.target.closest('#sidebar-toggle'))) {
+    return;
+  }
+  saveState();
 }
 
 function draw() {
@@ -181,6 +224,11 @@ function mouseDragged(e) {
 
   // --- Spray Pen Logic ---
   pg.noStroke();
+
+  if (isEraser) {
+     pg.erase();
+  }
+
   let d = dist(mouseX, mouseY, pmouseX, pmouseY);
   let steps = max(1, d * 0.5); // Fewer steps, but more density per step for spray feel
   for (let i = 0; i < steps; i++) {
@@ -218,6 +266,12 @@ function mouseDragged(e) {
     }
   }
   
+  if (isEraser) {
+      pg.noErase();
+      // Don't spawn drips or splats if erasing
+      return;
+  }
+
   // --- Spawn Effects Logic ---
   let ms = dist(mouseX, mouseY, pmouseX, pmouseY);
   let safeSpeed = constrain(ms, 0.1, 50);
@@ -245,9 +299,13 @@ function mouseDragged(e) {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-  let oldPg = pg;
-  pg = createGraphics(windowWidth, windowHeight);
-  pg.image(oldPg, 0, 0); 
+  // Create new buffer
+  let newPg = createGraphics(windowWidth, windowHeight);
+  // Draw old buffer onto new buffer
+  if (pg) {
+    newPg.image(pg, 0, 0);
+  }
+  pg = newPg;
 }
 
 // --- Drip Class ---
@@ -272,12 +330,28 @@ class Drip {
     this.baseSpeed = random(1, 3); 
     this.len = 0;
     this.highlightOffset = random(-2, 2);
+
+    // Pre-calculate jitter to avoid vibration
+    this.numPoints = 10;
+    this.leftJitter = [];
+    this.rightJitter = [];
+    for (let i = 0; i <= this.numPoints; i++) {
+        let t = i / this.numPoints;
+        // Jitter decreases as t -> 1 (near bead) to keep bead round?
+        // Or just keep it subtle.
+        let jitterScale = this.width * 0.05 * (1 - t);
+        this.leftJitter.push(randomGaussian(0, jitterScale));
+        this.rightJitter.push(randomGaussian(0, jitterScale));
+    }
   }
   
   update() {
     if (this.len < this.maxLen) {
       let progress = this.len / this.maxLen;
-      let currentSpeed = this.baseSpeed * (1 - progress * 0.9) * dripSpeed;
+      // Easing: quadratic out? or just damping?
+      // Original was: baseSpeed * (1 - progress * 0.9)
+      // Let's smooth it a bit more.
+      let currentSpeed = this.baseSpeed * (1 - easeOutCubic(progress) * 0.8) * dripSpeed;
       this.len += currentSpeed;
       if (this.len > this.maxLen) this.len = this.maxLen;
     }
@@ -296,30 +370,29 @@ class Drip {
     target.fill(c);
     
     let beadY = this.y + this.len;
-    let numPoints = 10; // More points for a smoother curve
 
     target.beginShape();
     // Start point (top-left of the drip's base)
     target.curveVertex(this.x - this.width / 2, this.y);
     
     // Define the left edge of the drip
-    for (let i = 0; i <= numPoints; i++) {
-      let t = i / numPoints;
+    for (let i = 0; i <= this.numPoints; i++) {
+      let t = i / this.numPoints;
       let y = lerp(this.y, beadY, t);
       // Use easing to make the drip taper and then bulge into the bead
       let w = lerp(this.width, this.beadSize, pow(t, 1.5));
-      let jitter = (1 - t) * randomGaussian(0, this.width * 0.05);
+      let jitter = this.leftJitter[i];
       target.curveVertex(this.x - w / 2 + jitter, y);
     }
     // Point at the very bottom of the bead
     target.curveVertex(this.x, beadY + this.beadSize * 0.3);
 
     // Define the right edge of the drip (mirroring the left)
-    for (let i = numPoints; i >= 0; i--) {
-      let t = i / numPoints;
+    for (let i = this.numPoints; i >= 0; i--) {
+      let t = i / this.numPoints;
       let y = lerp(this.y, beadY, t);
       let w = lerp(this.width, this.beadSize, pow(t, 1.5));
-      let jitter = (1 - t) * randomGaussian(0, this.width * 0.05);
+      let jitter = this.rightJitter[i];
       target.curveVertex(this.x + w / 2 + jitter, y);
     }
 
@@ -341,10 +414,17 @@ class Drip {
     target.vertex(this.x - beadHighlightSize / 2 + this.highlightOffset, beadY);
     target.endShape(CLOSE);
 
-    target.ellipse(this.x + this.beadSize * 0.2, beadY - this.beadSize * 0.2, this.beadSize * 0.3, this.beadSize * 0.3);
+    // Specular dot
+    target.fill(255, 150);
+    target.ellipse(this.x + this.beadSize * 0.2, beadY - this.beadSize * 0.2, this.beadSize * 0.2, this.beadSize * 0.2);
 
     target.pop();
   }
+}
+
+// Easing function for smoother drip
+function easeOutCubic(x) {
+  return 1 - pow(1 - x, 3);
 }
 
 // --- Splat Class ---
@@ -353,20 +433,46 @@ class Splat {
     this.x = x;
     this.y = y;
     this.col = col;
-
-    // Splats are larger and more irregular based on speed
-    this.radius = baseWidth * map(speed, 10, 50, 0.5, 2.0, true);
     this.particles = [];
 
-    let particleCount = int(random(10, 30));
-    for (let i = 0; i < particleCount; i++) {
-      let angle = random(TWO_PI);
-      // Let particles fly out further based on speed
-      let r = randomGaussian(0, this.radius * 0.5);
-      let pX = this.x + cos(angle) * r;
-      let pY = this.y + sin(angle) * r;
-      let pSize = random(this.radius * 0.1, this.radius * 0.3);
-      this.particles.push({ x: pX, y: pY, size: pSize });
+    // Core blob
+    let coreCount = int(random(5, 10));
+    for(let i=0; i<coreCount; i++) {
+        let r = random(baseWidth * 0.3);
+        let angle = random(TWO_PI);
+        this.particles.push({
+            x: this.x + cos(angle) * r,
+            y: this.y + sin(angle) * r,
+            size: random(baseWidth * 0.6, baseWidth),
+            alpha: 255
+        });
+    }
+
+    // Radiating droplets (arms) for "splash" look
+    let armCount = int(random(3, 8));
+    let speedFactor = map(speed, 0, 50, 1.0, 2.5, true);
+
+    for(let i=0; i<armCount; i++) {
+        let armAngle = random(TWO_PI);
+        let armLen = random(baseWidth, baseWidth * 2) * speedFactor;
+        let steps = int(armLen / (baseWidth * 0.15));
+
+        for(let j=1; j<steps; j++) {
+            let t = j / steps; // 0 to 1
+            let dist = t * armLen;
+            // Add some noise to the arm path
+            let deviation = random(-baseWidth * 0.1, baseWidth * 0.1);
+            let pX = this.x + cos(armAngle) * dist + deviation;
+            let pY = this.y + sin(armAngle) * dist + deviation;
+
+            // Size decreases as we go out
+            let pSize = map(t, 0, 1, baseWidth * 0.5, baseWidth * 0.1);
+            let pAlpha = map(t, 0, 1, 255, 100);
+
+            this.particles.push({
+                x: pX, y: pY, size: pSize, alpha: pAlpha
+            });
+        }
     }
   }
 
@@ -378,8 +484,7 @@ class Splat {
     let baseColor = color(this.col);
 
     for (let p of this.particles) {
-        let alpha = random(80, 150);
-        baseColor.setAlpha(alpha);
+        baseColor.setAlpha(p.alpha);
         target.fill(baseColor);
         target.ellipse(p.x, p.y, p.size, p.size);
     }
@@ -394,7 +499,7 @@ function drawKineticText() {
   noStroke();
   textFont(selectedFont);
   textSize(24);
-  textAlign(CENTER, BOTTOM); // Vertical text baseline
+  textAlign(CENTER, CENTER); // Center align for rotation
 
   // Move text to the left of the sidebar area to ensure visibility
   // Sidebar is 280px + 20px margin = 300px.
@@ -422,9 +527,18 @@ function drawKineticText() {
     let cw = textWidth(char);
 
     // Wave calculation
-    let wave = sin(frameCount * 0.05 * animSpeed + i * animFreq) * animAmp;
+    let time = frameCount * 0.05 * animSpeed;
+    let wave1 = sin(time + i * animFreq) * animAmp;
+    let wave2 = sin(time * 1.3 + i * (animFreq * 0.5)) * (animAmp * 0.5); // Secondary complex wave
 
-    text(char, currentX + cw/2, -10 + wave);
+    let yOffset = -10 + wave1 + wave2;
+    let angleRot = cos(time + i * animFreq) * 0.15; // Slight rotation per character
+
+    push();
+    translate(currentX + cw/2, yOffset);
+    rotate(angleRot);
+    text(char, 0, 0);
+    pop();
 
     currentX += cw;
   }
