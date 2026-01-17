@@ -6,7 +6,12 @@ function getClosestColorIndex(r, g, b, palette) {
     let idx = 0;
     for (let i = 0; i < palette.length; i++) {
         const p = palette[i];
-        const diff = (r - p[0])**2 + (g - p[1])**2 + (b - p[2])**2;
+        // Weighted Distance (Matches Shader: 2*R^2 + 4*G^2 + 3*B^2)
+        const dr = r - p[0];
+        const dg = g - p[1];
+        const db = b - p[2];
+        const diff = 2 * dr*dr + 4 * dg*dg + 3 * db*db;
+
         if (diff < minDiff) {
             minDiff = diff;
             idx = i;

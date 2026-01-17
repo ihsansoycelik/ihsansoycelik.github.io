@@ -69,9 +69,6 @@ export function initRenderer(canvas) {
         return;
     }
 
-    window.addEventListener('resize', () => resizeCanvas(canvas));
-    resizeCanvas(canvas);
-
     const shaderSource = getShaders();
     program = createProgram(gl, shaderSource.vertex, shaderSource.fragment);
     gl.useProgram(program);
@@ -128,18 +125,10 @@ export function initRenderer(canvas) {
     loadBayerTexture(8, generateBayer(8));
 }
 
-function resizeCanvas(canvas) {
-    const displayWidth = canvas.clientWidth;
-    const displayHeight = canvas.clientHeight;
-
-    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-        canvas.width = displayWidth;
-        canvas.height = displayHeight;
-        gl.viewport(0, 0, canvas.width, canvas.height);
-    }
-}
-
 export function loadTexture(source, width, height) {
+    // Update viewport to match new canvas size if set externally
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
