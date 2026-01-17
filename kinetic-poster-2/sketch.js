@@ -20,13 +20,19 @@ let colorGradientStart, colorGradientEnd;
 // Grain Controls
 let checkboxGrain, sliderGrainAmount, checkboxGrainAnimated, sliderGrainFrequency, selectGrainBlend, selectGrainType;
 
+// Export Controls
+let btnExportPng, btnExportGif, btnExportVideo;
+let capturer = null;
+let isRecording = false;
+let canvasRef;
+
 // Offscreen Buffers
 let pg;       // Main content buffer
 let pgNoise;  // Noise texture buffer
 
 function setup() {
-  const canvas = createCanvas(600, 800);
-  canvas.parent('canvas-container');
+  canvasRef = createCanvas(600, 800);
+  canvasRef.parent('canvas-container');
   
   // Setup UI Collapsible Logic
   setupUI();
@@ -99,9 +105,68 @@ function setup() {
   sliderGrainFrequency = select('#grain-frequency');
   selectGrainBlend = select('#grain-blend');
   selectGrainType = select('#grain-type');
+
+  // Export Buttons
+  btnExportPng = select('#btn-export-png');
+  btnExportGif = select('#btn-export-gif');
+  btnExportVideo = select('#btn-export-video');
+
+  if (btnExportPng) {
+    btnExportPng.mousePressed(() => {
+      saveCanvas(canvasRef, 'kinetic-poster', 'png');
+    });
+  }
+
+  if (btnExportGif) {
+    btnExportGif.mousePressed(() => {
+      if (isRecording) {
+        stopRecording();
+        btnExportGif.html('Start GIF Rec');
+        if(btnExportVideo) btnExportVideo.removeAttribute('disabled');
+      } else {
+        startRecording('gif');
+        btnExportGif.html('Stop GIF Rec');
+        if(btnExportVideo) btnExportVideo.attribute('disabled', '');
+      }
+    });
+  }
+
+  if (btnExportVideo) {
+    btnExportVideo.mousePressed(() => {
+      if (isRecording) {
+        stopRecording();
+        btnExportVideo.html('Start Video Rec');
+        if(btnExportGif) btnExportGif.removeAttribute('disabled');
+      } else {
+        startRecording('webm');
+        btnExportVideo.html('Stop Video Rec');
+        if(btnExportGif) btnExportGif.attribute('disabled', '');
+      }
+    });
+  }
   
   textAlign(CENTER, CENTER);
   rectMode(CENTER);
+}
+
+function startRecording(format) {
+  capturer = new CCapture({
+    format: format,
+    framerate: 30,
+    workersPath: 'lib/',
+    name: 'kinetic-poster'
+  });
+  capturer.start();
+  isRecording = true;
+}
+
+function stopRecording() {
+  if (capturer) {
+    capturer.stop();
+    capturer.save();
+    capturer = null;
+  }
+  isRecording = false;
 }
 
 function initBuffers(w, h) {
@@ -165,6 +230,11 @@ function draw() {
   // 3. Apply Grain
   if (checkboxGrain.checked()) {
     applyGrain();
+  }
+
+  // 4. Capture Frame
+  if (isRecording && capturer) {
+    capturer.capture(canvasRef.elt);
   }
 }
 
