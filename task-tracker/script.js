@@ -37,6 +37,16 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners();
     }
 
+    function addAccessibleClickListener(element, callback) {
+        element.addEventListener('click', callback);
+        element.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                callback(e);
+            }
+        });
+    }
+
     function getFilteredTasks() {
         switch (state.currentView) {
             case 'all':
@@ -93,8 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
         els.userLists.innerHTML = '';
         state.lists.forEach(list => {
             const li = document.createElement('li');
-            li.className = `list-row ${state.currentView === list.id ? 'active' : ''}`;
+            const isActive = state.currentView === list.id;
+            li.className = `list-row ${isActive ? 'active' : ''}`;
             li.dataset.id = list.id;
+            li.setAttribute('role', 'button');
+            li.setAttribute('tabindex', '0');
+            li.setAttribute('aria-current', isActive ? 'true' : 'false');
 
             const count = state.tasks.filter(t => t.listId === list.id && !t.completed).length;
 
@@ -108,17 +122,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="list-count">${count || ''}</span>
             `;
 
-            li.addEventListener('click', () => switchView(list.id));
+            addAccessibleClickListener(li, () => switchView(list.id));
             els.userLists.appendChild(li);
         });
-    }
 
         // Update Smart Cards Active State
         els.smartCards.forEach(card => {
             if (card.dataset.list === state.currentView) {
                 card.classList.add('active');
+                card.setAttribute('aria-current', 'true');
             } else {
                 card.classList.remove('active');
+                card.setAttribute('aria-current', 'false');
             }
         });
     }
@@ -137,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const taskRow = document.createElement('div');
             taskRow.className = `task-row ${task.completed ? 'completed' : ''}`;
             taskRow.innerHTML = `
-                <div class="check-circle" role="button"></div>
+                <div class="check-circle" role="button" tabindex="0" aria-label="${task.completed ? 'Mark as incomplete' : 'Mark as complete'}"></div>
                 <div class="task-content">
                     <input type="text" class="task-text" value="${escapeHtml(task.text)}" readonly>
                     <!-- <div class="task-details">Notes or Date</div> -->
@@ -153,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Event Listeners for Task Items
             const check = taskRow.querySelector('.check-circle');
-            check.addEventListener('click', (e) => {
+            addAccessibleClickListener(check, (e) => {
                 e.stopPropagation();
                 toggleTask(task.id);
             });
@@ -213,50 +228,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupEventListeners() {
         // Smart Cards
         els.smartCards.forEach(card => {
-            card.addEventListener('click', () => switchView(card.dataset.list));
+            addAccessibleClickListener(card, () => switchView(card.dataset.list));
         });
 
         // New Task Interaction
-        const placeholder = els.newTaskWrapper.querySelector('.task-row.is-placeholder');
-
-        // Transform placeholder to input
-        placeholder.addEventListener('click', () => {
-            els.newTaskWrapper.innerHTML = `
-                <div class="task-row">
-                    <div class="check-circle-placeholder"></div>
-                    <div class="task-content">
-                        <input type="text" id="new-task-input" class="task-text" placeholder="New Reminder" autofocus>
-                    </div>
-                </div>
-            `;
-            const input = document.getElementById('new-task-input');
-            input.focus();
-
-            // Handle Input Enter
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    if (input.value.trim()) {
-                        addTask(input.value.trim());
-                        input.value = ''; // Clear for next
-                    } else {
-                        // Empty enter, revert
-                        resetNewTaskArea();
-                    }
-                }
-            });
-
-            // Handle Blur (revert if empty)
-            input.addEventListener('blur', () => {
-                if (!input.value.trim()) {
-                    resetNewTaskArea();
-                } else {
-                    // Option: auto-save on blur? Apple Reminders doesn't usually, but let's just keep it focused or add.
-                    // For now, if they click away with text, let's add it.
-                    addTask(input.value.trim());
-                    resetNewTaskArea();
-                }
-            });
-        });
+        bindNewTask();
     }
 
     function resetNewTaskArea() {
@@ -333,12 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
         div.textContent = text;
         return div.innerHTML;
     }
-
-    // Replace setupEventListeners placeholder logic with bindNewTask
-    els.smartCards.forEach(card => {
-        card.addEventListener('click', () => switchView(card.dataset.list));
-    });
-    bindNewTask();
 
     // Start
     init();
