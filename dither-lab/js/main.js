@@ -255,3 +255,20 @@ function loop() {
     }
     // If CPU, we do nothing. The worker callback handles the render.
 }
+
+function getEffectiveRenderState(currentState) {
+    // If video and CPU algo selected, fallback to Bayer-4
+    if (currentState.image.type === 'video') {
+         const isCPU = CPU_ALGOS.includes(currentState.settings.algorithm);
+         if (isCPU) {
+             return {
+                 ...currentState,
+                 settings: {
+                     ...currentState.settings,
+                     algorithm: 'bayer-4'
+                 }
+             };
+         }
+    }
+    return currentState;
+}
