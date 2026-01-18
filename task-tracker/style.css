@@ -22,8 +22,14 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    outline: none;
+    /* Removed outline: none; */
     -webkit-font-smoothing: antialiased;
+}
+
+/* Accessible focus styles */
+:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
 }
 
 body {
@@ -347,7 +353,8 @@ body {
     padding: 4px;
 }
 
-.task-row:hover .delete-btn {
+.task-row:hover .delete-btn,
+.delete-btn:focus-visible {
     opacity: 1;
 }
 

@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
         tasks: [
             { id: 1, text: 'Buy groceries', completed: false, listId: 'personal', date: new Date() },
             { id: 2, text: 'Finish project proposal', completed: false, listId: 'work', date: new Date() },
-            { id: 3, text: 'Call Mom', completed: true, listId: 'personal', date: new Date() }
+            { id: 3, text: 'Call Mom', completed: true, listId: 'personal', date: new Date() },
+            { id: 4, text: "Dad's birthday", completed: false, listId: 'personal', date: new Date() }
         ],
         currentView: 'all' // 'all', 'today', 'scheduled', 'flagged', or listId
     };
@@ -28,6 +29,21 @@ document.addEventListener('DOMContentLoaded', () => {
             flagged: document.getElementById('count-flagged')
         }
     };
+
+    // --- Helper: Accessible Click Listener ---
+    function addAccessibleClickListener(element, callback) {
+        element.addEventListener('click', callback);
+
+        // Don't add keydown for buttons as they handle it natively
+        if (element.tagName !== 'BUTTON' && element.tagName !== 'INPUT') {
+            element.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault(); // Prevent scrolling for Space
+                    callback(e);
+                }
+            });
+        }
+    }
 
     // --- Core Logic ---
 
@@ -92,9 +108,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render User Lists
         els.userLists.innerHTML = '';
         state.lists.forEach(list => {
+            const isActive = state.currentView === list.id;
             const li = document.createElement('li');
-            li.className = `list-row ${state.currentView === list.id ? 'active' : ''}`;
+            li.className = `list-row ${isActive ? 'active' : ''}`;
             li.dataset.id = list.id;
+
+            // Accessibility
+            li.setAttribute('role', 'button');
+            li.setAttribute('tabindex', '0');
+            if (isActive) {
+                li.setAttribute('aria-current', 'true');
+            }
 
             const count = state.tasks.filter(t => t.listId === list.id && !t.completed).length;
 
@@ -108,17 +132,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="list-count">${count || ''}</span>
             `;
 
-            li.addEventListener('click', () => switchView(list.id));
+            addAccessibleClickListener(li, () => switchView(list.id));
             els.userLists.appendChild(li);
         });
-    }
 
         // Update Smart Cards Active State
         els.smartCards.forEach(card => {
-            if (card.dataset.list === state.currentView) {
+            const isActive = card.dataset.list === state.currentView;
+            if (isActive) {
                 card.classList.add('active');
+                card.setAttribute('aria-current', 'true');
             } else {
                 card.classList.remove('active');
+                card.removeAttribute('aria-current');
             }
         });
     }
@@ -136,14 +162,18 @@ document.addEventListener('DOMContentLoaded', () => {
         tasks.forEach(task => {
             const taskRow = document.createElement('div');
             taskRow.className = `task-row ${task.completed ? 'completed' : ''}`;
+
+            const taskTextEscaped = escapeAttribute(task.text);
+            const taskTextDisplay = escapeHtml(task.text);
+
             taskRow.innerHTML = `
-                <div class="check-circle" role="button"></div>
+                <div class="check-circle" role="checkbox" tabindex="0" aria-checked="${task.completed}" aria-label="Mark '${taskTextEscaped}' as ${task.completed ? 'incomplete' : 'complete'}"></div>
                 <div class="task-content">
-                    <input type="text" class="task-text" value="${escapeHtml(task.text)}" readonly>
+                    <input type="text" class="task-text" value="${taskTextDisplay}" readonly>
                     <!-- <div class="task-details">Notes or Date</div> -->
                 </div>
                 <!-- Delete Icon (appears on hover) -->
-                <button class="delete-btn" aria-label="Delete">
+                <button class="delete-btn" aria-label="Delete ${taskTextEscaped}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -153,13 +183,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Event Listeners for Task Items
             const check = taskRow.querySelector('.check-circle');
-            check.addEventListener('click', (e) => {
+            addAccessibleClickListener(check, (e) => {
                 e.stopPropagation();
                 toggleTask(task.id);
             });
 
             const deleteBtn = taskRow.querySelector('.delete-btn');
-            deleteBtn.addEventListener('click', (e) => {
+            addAccessibleClickListener(deleteBtn, (e) => {
                 e.stopPropagation();
                 deleteTask(task.id);
             });
@@ -213,72 +243,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupEventListeners() {
         // Smart Cards
         els.smartCards.forEach(card => {
-            card.addEventListener('click', () => switchView(card.dataset.list));
+            addAccessibleClickListener(card, () => switchView(card.dataset.list));
         });
 
         // New Task Interaction
         const placeholder = els.newTaskWrapper.querySelector('.task-row.is-placeholder');
 
-        // Transform placeholder to input
-        placeholder.addEventListener('click', () => {
-            els.newTaskWrapper.innerHTML = `
-                <div class="task-row">
-                    <div class="check-circle-placeholder"></div>
-                    <div class="task-content">
-                        <input type="text" id="new-task-input" class="task-text" placeholder="New Reminder" autofocus>
-                    </div>
-                </div>
-            `;
-            const input = document.getElementById('new-task-input');
-            input.focus();
-
-            // Handle Input Enter
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    if (input.value.trim()) {
-                        addTask(input.value.trim());
-                        input.value = ''; // Clear for next
-                    } else {
-                        // Empty enter, revert
-                        resetNewTaskArea();
-                    }
-                }
-            });
-
-            // Handle Blur (revert if empty)
-            input.addEventListener('blur', () => {
-                if (!input.value.trim()) {
-                    resetNewTaskArea();
-                } else {
-                    // Option: auto-save on blur? Apple Reminders doesn't usually, but let's just keep it focused or add.
-                    // For now, if they click away with text, let's add it.
-                    addTask(input.value.trim());
-                    resetNewTaskArea();
-                }
-            });
-        });
+        // Make placeholder accessible
+        placeholder.setAttribute('role', 'button');
+        placeholder.setAttribute('tabindex', '0');
+        addAccessibleClickListener(placeholder, activateNewTask);
     }
 
-    function resetNewTaskArea() {
+    function activateNewTask() {
         els.newTaskWrapper.innerHTML = `
-            <div class="task-row is-placeholder">
-                <div class="check-circle-placeholder"></div>
-                <span class="placeholder-text">New Reminder</span>
-            </div>
-        `;
-        // Re-bind click
-        const placeholder = els.newTaskWrapper.querySelector('.task-row.is-placeholder');
-        placeholder.addEventListener('click', () => {
-             // ... trigger setup again (easier to just call setupEventListeners part for this, but simplistic approach below)
-             // Actually, since I replaced innerHTML, the original event listener is gone.
-             // I need to extract the logic.
-             handleNewTaskClick(placeholder);
-        });
-    }
-
-    function handleNewTaskClick(element) {
-        // Copied logic from setupEventListeners to handle re-binding
-         els.newTaskWrapper.innerHTML = `
             <div class="task-row">
                 <div class="check-circle-placeholder"></div>
                 <div class="task-content">
@@ -293,52 +271,51 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') {
                 if (input.value.trim()) {
                     addTask(input.value.trim());
-                    input.value = '';
+                    input.value = ''; // Clear for next
                 } else {
+                    // Empty enter, revert
                     resetNewTaskArea();
                 }
             }
         });
 
+        // Handle Blur (revert if empty)
         input.addEventListener('blur', () => {
-            if (input.value.trim()) {
+            if (!input.value.trim()) {
+                resetNewTaskArea();
+            } else {
+                // Option: auto-save on blur? Apple Reminders doesn't usually, but let's just keep it focused or add.
+                // For now, if they click away with text, let's add it.
                 addTask(input.value.trim());
+                resetNewTaskArea();
             }
-            resetNewTaskArea();
         });
     }
 
-    // Initial binding fix
-    function bindNewTask() {
-         const placeholder = els.newTaskWrapper.querySelector('.task-row.is-placeholder');
-         if(placeholder) {
-             placeholder.addEventListener('click', () => handleNewTaskClick(placeholder));
-         }
-    }
-
-    // Override reset to use bind
     function resetNewTaskArea() {
         els.newTaskWrapper.innerHTML = `
-            <div class="task-row is-placeholder">
+            <div class="task-row is-placeholder" role="button" tabindex="0">
                 <div class="check-circle-placeholder"></div>
                 <span class="placeholder-text">New Reminder</span>
             </div>
         `;
-        bindNewTask();
+        // Re-bind click
+        const placeholder = els.newTaskWrapper.querySelector('.task-row.is-placeholder');
+        // Need to re-bind accessible listener
+        addAccessibleClickListener(placeholder, activateNewTask);
     }
 
-    // Helper to prevent XSS
+    // Helper to prevent XSS in HTML Content
     function escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
-    // Replace setupEventListeners placeholder logic with bindNewTask
-    els.smartCards.forEach(card => {
-        card.addEventListener('click', () => switchView(card.dataset.list));
-    });
-    bindNewTask();
+    // Helper to escape attributes (handling quotes)
+    function escapeAttribute(text) {
+        return text.replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+    }
 
     // Start
     init();
