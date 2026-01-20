@@ -26,6 +26,11 @@ let flash;
 let raycaster;
 const bullets = [];
 
+// Animation State
+let gunRecoil = 0;
+let gunSway = new THREE.Vector2();
+const gunBasePos = new THREE.Vector3(0.2, -0.2, -0.5);
+
 // Enemies
 const enemies = [];
 let lastSpawnTime = 0;
@@ -73,7 +78,7 @@ function init() {
 
     gameOverScreen.addEventListener('click', function () {
         if (gameOverScreen.style.display !== 'none') {
-             location.reload(); // Simple restart
+             resetGame();
         }
     });
 
@@ -147,6 +152,13 @@ function init() {
         }
     });
 
+    document.addEventListener('mousemove', (event) => {
+        if (controls.isLocked) {
+            gunSway.x += event.movementX * 0.0002;
+            gunSway.y += event.movementY * 0.0002;
+        }
+    });
+
     // Initialize Reusable Assets
     enemyGeometry = new THREE.BoxGeometry(1.5, 3, 1.5);
     enemyMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
@@ -163,18 +175,60 @@ function init() {
     window.addEventListener('resize', onWindowResize);
 }
 
+function createProceduralTexture(type) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    if (type === 'grid') {
+        ctx.fillStyle = '#222';
+        ctx.fillRect(0, 0, 512, 512);
+        ctx.strokeStyle = '#444';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        for (let i = 0; i <= 512; i += 64) {
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, 512);
+            ctx.moveTo(0, i);
+            ctx.lineTo(512, i);
+        }
+        ctx.stroke();
+    } else if (type === 'box') {
+        ctx.fillStyle = '#4444aa';
+        ctx.fillRect(0, 0, 512, 512);
+        // Add some noise
+        for (let i = 0; i < 1000; i++) {
+            ctx.fillStyle = Math.random() > 0.5 ? '#5555bb' : '#333399';
+            ctx.fillRect(Math.random() * 512, Math.random() * 512, 10, 10);
+        }
+        // Border
+        ctx.strokeStyle = '#6666cc';
+        ctx.lineWidth = 20;
+        ctx.strokeRect(0, 0, 512, 512);
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+}
+
 function setupEnvironment() {
+    const floorTexture = createProceduralTexture('grid');
+    floorTexture.repeat.set(50, 50);
+
     const floorGeometry = new THREE.PlaneGeometry(200, 200);
-    const floorMaterial = new THREE.MeshLambertMaterial({ color: 0x222222 });
+    const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.8 });
     const floor = new THREE.Mesh(floorGeometry, floorMaterial);
     floor.rotation.x = -Math.PI / 2;
     scene.add(floor);
 
-    const grid = new THREE.GridHelper(200, 100, 0x444444, 0x222222);
-    scene.add(grid);
+    // Removed GridHelper as texture provides the grid
 
+    const boxTexture = createProceduralTexture('box');
     const boxGeometry = new THREE.BoxGeometry(5, 5, 5);
-    const boxMaterial = new THREE.MeshLambertMaterial({ color: 0x4444aa });
+    const boxMaterial = new THREE.MeshStandardMaterial({ map: boxTexture, roughness: 0.5 });
     const environment = new THREE.Group();
     environment.name = "environment";
 
@@ -220,10 +274,11 @@ function spawnEnemy() {
 
 function updateEnemies(delta) {
     const playerPos = camera.position;
+    const time = performance.now();
 
-    if (performance.now() - lastSpawnTime > 2000) {
+    if (time - lastSpawnTime > 2000) {
         spawnEnemy();
-        lastSpawnTime = performance.now();
+        lastSpawnTime = time;
     }
 
     for (let i = enemies.length - 1; i >= 0; i--) {
@@ -234,6 +289,9 @@ function updateEnemies(delta) {
 
         enemy.position.add(dir.multiplyScalar(4 * delta));
         enemy.lookAt(playerPos.x, enemy.position.y, playerPos.z);
+
+        // Animation: Float
+        enemy.position.y = 1.5 + Math.sin(time * 0.003 + enemy.id) * 0.2;
 
         if (enemy.position.distanceTo(playerPos) < 1.5) {
             health -= 10;
@@ -250,6 +308,33 @@ function updateEnemies(delta) {
             }
         }
     }
+}
+
+function resetGame() {
+    score = 0;
+    health = 100;
+    document.getElementById('score-display').innerText = `SCORE: ${score}`;
+    document.getElementById('health-display').innerText = `HEALTH: ${health}`;
+
+    // Remove all enemies
+    for (const enemy of enemies) {
+        scene.remove(enemy);
+    }
+    enemies.length = 0;
+
+    // Reset player
+    controls.getObject().position.set(0, 1.6, 0);
+    velocity.set(0, 0, 0);
+
+    // Reset gun animation
+    gunRecoil = 0;
+    gunSway.set(0, 0);
+
+    // Hide Game Over
+    document.getElementById('game-over').style.display = 'none';
+
+    controls.lock();
+    isGameActive = true;
 }
 
 function gameOver() {
@@ -296,30 +381,11 @@ function shoot() {
     flash.intensity = 1.0;
     setTimeout(() => { flash.intensity = 0; }, 50);
 
-    // Recoil
-    const originalZ = -0.5;
-    const recoilZ = -0.3;
-    let recoilFrame = 0;
-    const recoilDuration = 10;
-    const animateRecoil = () => {
-        recoilFrame++;
-        if (recoilFrame < 5) {
-            gun.position.z = originalZ + ((recoilZ - originalZ) * (recoilFrame / 5));
-            gun.rotation.x = 0.1 * (recoilFrame / 5);
-        } else if (recoilFrame < recoilDuration) {
-            gun.position.z = recoilZ - ((recoilZ - originalZ) * ((recoilFrame - 5) / 5));
-            gun.rotation.x = 0.1 - (0.1 * ((recoilFrame - 5) / 5));
-        } else {
-            gun.position.z = originalZ;
-            gun.rotation.x = 0;
-            return;
-        }
-        requestAnimationFrame(animateRecoil);
-    };
-    animateRecoil();
+    // Apply Recoil Impulse
+    gunRecoil = 0.2;
 
     raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-    const intersects = raycaster.intersectObjects(scene.children);
+    const intersects = raycaster.intersectObjects(scene.children, true);
     let targetPoint = null;
 
     for (let i = 0; i < intersects.length; i++) {
@@ -364,6 +430,28 @@ function shoot() {
     }
 
     createBulletTrail(gun.getWorldPosition(new THREE.Vector3()), targetPoint);
+}
+
+function checkCollisions() {
+    const playerRadius = 0.5;
+    const playerPos = controls.getObject().position;
+    const environment = scene.getObjectByName('environment');
+
+    if (!environment) return false;
+
+    const playerBox = new THREE.Box3();
+    const center = playerPos.clone();
+    center.y -= 0.8;
+    playerBox.setFromCenterAndSize(center, new THREE.Vector3(playerRadius * 2, 1.6, playerRadius * 2));
+
+    for (let i = 0; i < environment.children.length; i++) {
+        const box = environment.children[i];
+        const boxBoundingBox = new THREE.Box3().setFromObject(box);
+        if (playerBox.intersectsBox(boxBoundingBox)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function createBulletTrail(start, end) {
@@ -413,14 +501,59 @@ function animate() {
         if (moveForward || moveBackward) velocity.z -= direction.z * 100.0 * delta;
         if (moveLeft || moveRight) velocity.x -= direction.x * 100.0 * delta;
 
+        // Apply movement with collision detection
+        const oldPos = controls.getObject().position.clone();
+
+        // Strafe (Left/Right)
         controls.moveRight(-velocity.x * delta);
+        if (checkCollisions()) {
+            controls.getObject().position.copy(oldPos);
+            velocity.x = 0;
+        }
+
+        // Forward/Backward
+        const posAfterStrafe = controls.getObject().position.clone();
         controls.moveForward(-velocity.z * delta);
+        if (checkCollisions()) {
+            controls.getObject().position.copy(posAfterStrafe);
+            velocity.z = 0;
+        }
+
         controls.getObject().position.y += (velocity.y * delta);
 
         if (controls.getObject().position.y < 1.6) {
             velocity.y = 0;
             controls.getObject().position.y = 1.6;
             canJump = true;
+        }
+
+        // Weapon Animations
+        // Decay sway
+        gunSway.lerp(new THREE.Vector2(0, 0), 10.0 * delta);
+
+        // Apply recoil decay
+        gunRecoil = Math.max(0, gunRecoil - delta * 2.0);
+
+        // Bobbing
+        // Use horizontal velocity for bobbing
+        const speed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+        // speed can be large (velocity is dragged), max walk speed is around 100 * delta? No.
+        // velocity is in units per second (approx).
+        // Let's cap bob influence
+        const bobAmount = Math.min(speed * 0.005, 0.05);
+        const bobFrequency = time * 0.015;
+        const bobY = Math.sin(bobFrequency) * bobAmount;
+        const bobX = Math.cos(bobFrequency * 0.5) * bobAmount;
+
+        // Update gun transform
+        if (gun) {
+            gun.position.x = gunBasePos.x - gunSway.x + bobX;
+            gun.position.y = gunBasePos.y - gunSway.y + bobY;
+            gun.position.z = gunBasePos.z + gunRecoil;
+
+            // Rotation
+            gun.rotation.x = gunRecoil * 1.0 - gunSway.y * 4;
+            gun.rotation.y = -gunSway.x * 4;
         }
 
         updateEnemies(delta);
