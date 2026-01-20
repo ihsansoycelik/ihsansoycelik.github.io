@@ -37,6 +37,17 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners();
     }
 
+    // Helper for accessible click listeners (Click + Enter/Space)
+    function addAccessibleClickListener(element, callback) {
+        element.addEventListener('click', callback);
+        element.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                callback(e);
+            }
+        });
+    }
+
     function getFilteredTasks() {
         switch (state.currentView) {
             case 'all':
@@ -95,6 +106,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.className = `list-row ${state.currentView === list.id ? 'active' : ''}`;
             li.dataset.id = list.id;
+            // Accessibility
+            li.setAttribute('role', 'button');
+            li.setAttribute('tabindex', '0');
+            li.setAttribute('aria-label', `Show ${list.name} tasks`);
+            li.setAttribute('aria-current', state.currentView === list.id ? 'true' : 'false');
 
             const count = state.tasks.filter(t => t.listId === list.id && !t.completed).length;
 
@@ -108,17 +124,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="list-count">${count || ''}</span>
             `;
 
-            li.addEventListener('click', () => switchView(list.id));
+            addAccessibleClickListener(li, () => switchView(list.id));
             els.userLists.appendChild(li);
         });
-    }
 
         // Update Smart Cards Active State
         els.smartCards.forEach(card => {
             if (card.dataset.list === state.currentView) {
                 card.classList.add('active');
+                card.setAttribute('aria-current', 'true');
             } else {
                 card.classList.remove('active');
+                card.setAttribute('aria-current', 'false');
             }
         });
     }
@@ -136,29 +153,34 @@ document.addEventListener('DOMContentLoaded', () => {
         tasks.forEach(task => {
             const taskRow = document.createElement('div');
             taskRow.className = `task-row ${task.completed ? 'completed' : ''}`;
-            taskRow.innerHTML = `
-                <div class="check-circle" role="button"></div>
+
+            // HTML Structure
+            const checkCircleHtml = `<div class="check-circle" role="checkbox" tabindex="0" aria-checked="${task.completed}" aria-label="Mark task as ${task.completed ? 'incomplete' : 'complete'}"></div>`;
+            const contentHtml = `
                 <div class="task-content">
                     <input type="text" class="task-text" value="${escapeHtml(task.text)}" readonly>
                     <!-- <div class="task-details">Notes or Date</div> -->
-                </div>
-                <!-- Delete Icon (appears on hover) -->
-                <button class="delete-btn" aria-label="Delete">
+                </div>`;
+            const deleteHtml = `
+                <!-- Delete Icon (appears on hover/focus) -->
+                <button class="delete-btn" aria-label="Delete task">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     </svg>
-                </button>
-            `;
+                </button>`;
+
+            taskRow.innerHTML = checkCircleHtml + contentHtml + deleteHtml;
 
             // Event Listeners for Task Items
             const check = taskRow.querySelector('.check-circle');
-            check.addEventListener('click', (e) => {
+            addAccessibleClickListener(check, (e) => {
                 e.stopPropagation();
                 toggleTask(task.id);
             });
 
             const deleteBtn = taskRow.querySelector('.delete-btn');
+            // Button already handles Enter/Space by default, but we need click
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 deleteTask(task.id);
@@ -213,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupEventListeners() {
         // Smart Cards
         els.smartCards.forEach(card => {
-            card.addEventListener('click', () => switchView(card.dataset.list));
+            addAccessibleClickListener(card, () => switchView(card.dataset.list));
         });
 
         // New Task Interaction
@@ -336,7 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Replace setupEventListeners placeholder logic with bindNewTask
     els.smartCards.forEach(card => {
-        card.addEventListener('click', () => switchView(card.dataset.list));
+        addAccessibleClickListener(card, () => switchView(card.dataset.list));
     });
     bindNewTask();
 

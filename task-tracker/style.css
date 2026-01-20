@@ -107,6 +107,11 @@ body {
     background-color: #e5e5ea;
 }
 
+.smart-card:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+}
+
 .smart-card.active {
     background-color: #3a3a3c;
     color: white;
@@ -180,6 +185,12 @@ body {
 
 .list-row.active {
     background-color: rgba(0,0,0,0.1);
+}
+
+.list-row:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: -2px; /* Inner outline */
+    background-color: rgba(0,0,0,0.05);
 }
 
 .list-icon-bg {
@@ -290,6 +301,12 @@ body {
     border-color: #999;
 }
 
+.check-circle:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+    border-color: var(--color-blue);
+}
+
 .task-row.completed .check-circle {
     background-color: var(--color-blue);
     border-color: var(--color-blue);
@@ -347,8 +364,15 @@ body {
     padding: 4px;
 }
 
-.task-row:hover .delete-btn {
+.task-row:hover .delete-btn,
+.delete-btn:focus-visible {
     opacity: 1;
+}
+
+.delete-btn:focus-visible {
+    outline: 2px solid var(--color-red);
+    outline-offset: 0px;
+    border-radius: 4px;
 }
 
 .delete-btn:hover {

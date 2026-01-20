@@ -1,0 +1,3 @@
+## 2024-05-24 - Task Tracker Accessibility Pattern
+**Learning:** The `task-tracker` project used extensive "div-soup" (using `div` and `li` for interactive elements) without corresponding ARIA roles, `tabindex`, or keyboard event listeners. This required a manual retrofit of `role="button/checkbox"`, `tabindex="0"`, and a helper function for `Enter/Space` key handling.
+**Action:** When working on legacy or rapid-prototype sub-projects, assume non-semantic markup and immediately check for keyboard operability. Use a standardized `addAccessibleClickListener` helper to quickly patch these interaction gaps.
