@@ -66,20 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Hide spinner and show frame
         loadingSpinner.style.display = 'none';
         projectFrame.style.display = 'block';
-
-        try {
-            const iframeDoc = projectFrame.contentDocument || projectFrame.contentWindow.document;
-            if (iframeDoc) {
-                // 1. Auto-Resize
-                projectFrame.style.height = iframeDoc.body.scrollHeight + 'px';
-                const ro = new ResizeObserver(() => {
-                    projectFrame.style.height = iframeDoc.body.scrollHeight + 'px';
-                });
-                ro.observe(iframeDoc.body);
-            }
-        } catch (e) {
-            console.warn('Cannot auto-resize iframe or access content due to limitations', e);
-        }
     });
 
     // Create SVG Layer

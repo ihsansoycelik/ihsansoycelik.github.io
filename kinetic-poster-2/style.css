@@ -8,6 +8,10 @@
   --accent-color: #0a84ff;
 }
 
+html, body {
+  height: 100%;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -17,8 +21,9 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  min-height: 100vh;
+  min-height: 100%;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 #app-container {

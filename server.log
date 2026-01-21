@@ -1,0 +1,10 @@
+127.0.0.1 - - [21/Jan/2026 19:05:31] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 19:05:31] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 19:05:31] "GET /script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 19:05:32] "GET /crinkle-cut-fry/index.html HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 19:06:02] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 19:06:02] "GET /script.js HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 19:06:02] "GET /style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 19:06:02] "GET /Interactive-graffiti-1/index.html HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 19:06:02] "GET /Interactive-graffiti-1/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [21/Jan/2026 19:06:02] "GET /Interactive-graffiti-1/sketch.js HTTP/1.1" 200 -
