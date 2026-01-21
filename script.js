@@ -2,16 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Data Management: Constant array of projects
     const projects = [
         {
-            title: "Crinkle-Cut Type",
-            tag: "Interaction",
-            category: "Posters",
-            url: "crinkle-cut-fry/index.html",
-            date: "2023-10-27",
-            author: "Me",
-            tech: "Vanilla JS",
-            backgroundColor: "#FDEE3F"
-        },
-        {
             title: "Kinetic-Poster-1",
             tag: "Generative",
             category: "Posters",
