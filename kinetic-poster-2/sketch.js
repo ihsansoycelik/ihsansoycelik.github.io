@@ -1,3 +1,4 @@
+// Global variables
 let inputLine1, inputLine2, inputLine3;
 let selectTextAlign;
 let sliderJitterSpeed, sliderJitterAmount, sliderTextSize;
@@ -10,158 +11,170 @@ let colorBg, colorFace, colorShadow;
 let colorOverlayText, colorOverlayLines;
 let colorBadgeBg, colorBadgeText;
 
-// Gradient Map Controls
-let checkboxGradient;
-let colorGradientStart, colorGradientEnd;
-
-// Grain Controls
+// Gradient & Grain
+let checkboxGradient, colorGradientStart, colorGradientEnd;
 let checkboxGrain, sliderGrainAmount, checkboxGrainAnimated, sliderGrainFrequency, selectGrainBlend, selectGrainType;
 
-// Offscreen Buffers
-let pg;       // Main content buffer
-let pgNoise;  // Noise texture buffer
+// Buffers
+let pg, pgNoise;
 
 function setup() {
-  const canvas = createCanvas(windowWidth, windowHeight);
-  canvas.parent('canvas-container');
-  
-  // Create offscreen graphics buffer
-  initBuffers(windowWidth, windowHeight);
-  
-  // Select HTML elements
-  inputLine1 = select('#text-line-1');
-  inputLine2 = select('#text-line-2');
-  inputLine3 = select('#text-line-3');
-  selectTextAlign = select('#text-align');
-  
-  checkboxJitter = select('#jitter-enabled');
-  sliderJitterSpeed = select('#jitter-speed');
-  sliderJitterAmount = select('#jitter-amount');
-  sliderTextSize = select('#text-size');
-  
-  sliderTitleX = select('#title-x');
-  sliderTitleY = select('#title-y');
+  // 1. Create Canvas
+  let c = createCanvas(windowWidth, windowHeight);
+  // Ensure the parent exists
+  let parent = document.getElementById('canvas-container');
+  if (parent) {
+    c.parent(parent);
+  }
 
-  // Set initial position to center
+  // 2. Initialize Buffers
+  initBuffers(windowWidth, windowHeight);
+
+  // 3. Bind UI Elements
+  // We use p5's select() but verify results to avoid crashes
+  
+  // Text Inputs
+  inputLine1 = selectElement('#text-line-1');
+  inputLine2 = selectElement('#text-line-2');
+  inputLine3 = selectElement('#text-line-3');
+  selectTextAlign = selectElement('#text-align');
+  
+  // Jitter / Transforms
+  checkboxJitter = selectElement('#jitter-enabled');
+  sliderJitterSpeed = selectElement('#jitter-speed');
+  sliderJitterAmount = selectElement('#jitter-amount');
+  sliderTextSize = selectElement('#text-size');
+  sliderTitleX = selectElement('#title-x');
+  sliderTitleY = selectElement('#title-y');
+
+  // Initial centering if inputs exist
   if(sliderTitleX) sliderTitleX.value(width/2);
   if(sliderTitleY) sliderTitleY.value(height/2);
 
-  // Select Overlay inputs
+  // Overlay Inputs
   for (let i = 1; i <= 4; i++) {
     overlayInputs.push({
-      l: select(`#overlay-${i}-l`),
-      r: select(`#overlay-${i}-r`)
+      l: selectElement(`#overlay-${i}-l`),
+      r: selectElement(`#overlay-${i}-r`)
     });
   }
-  
+
   // Colors
-  colorBg = select('#col-bg');
-  // Sync background color
-  document.body.style.backgroundColor = colorBg.value();
-  colorBg.input(() => {
+  colorBg = selectElement('#col-bg');
+  colorFace = selectElement('#col-face');
+  colorShadow = selectElement('#col-shadow');
+  colorOverlayText = selectElement('#col-overlay-text');
+  colorOverlayLines = selectElement('#col-overlay-lines');
+  colorBadgeBg = selectElement('#col-badge-bg');
+  colorBadgeText = selectElement('#col-badge-text');
+
+  // Sync Body BG
+  if(colorBg) {
     document.body.style.backgroundColor = colorBg.value();
-  });
+    colorBg.input(() => document.body.style.backgroundColor = colorBg.value());
+  }
 
-  colorFace = select('#col-face');
-  colorShadow = select('#col-shadow');
-  colorOverlayText = select('#col-overlay-text');
-  colorOverlayLines = select('#col-overlay-lines');
-  colorBadgeBg = select('#col-badge-bg');
-  colorBadgeText = select('#col-badge-text');
+  // Gradient & Grain
+  checkboxGradient = selectElement('#gradient-enabled');
+  colorGradientStart = selectElement('#gradient-start');
+  colorGradientEnd = selectElement('#gradient-end');
 
-  // Gradient Map
-  checkboxGradient = select('#gradient-enabled');
-  colorGradientStart = select('#gradient-start');
-  colorGradientEnd = select('#gradient-end');
+  checkboxGrain = selectElement('#grain-enabled');
+  sliderGrainAmount = selectElement('#grain-amount');
+  checkboxGrainAnimated = selectElement('#grain-animated');
+  sliderGrainFrequency = selectElement('#grain-frequency');
+  selectGrainBlend = selectElement('#grain-blend');
+  selectGrainType = selectElement('#grain-type');
 
-  // Grain
-  checkboxGrain = select('#grain-enabled');
-  sliderGrainAmount = select('#grain-amount');
-  checkboxGrainAnimated = select('#grain-animated');
-  sliderGrainFrequency = select('#grain-frequency');
-  selectGrainBlend = select('#grain-blend');
-  selectGrainType = select('#grain-type');
-  
+  // Setup UI toggles
   setupUI();
-  
+
+  // Settings
   textAlign(CENTER, CENTER);
   rectMode(CENTER);
 }
 
+// Helper to safely select an element
+function selectElement(selector) {
+  let el = select(selector);
+  if (!el) {
+    console.warn(`Element not found: ${selector}`);
+    // Return a dummy object to prevent .value() crashes
+    return { 
+      value: () => 0, 
+      checked: () => false, 
+      input: () => {}, 
+      changed: () => {},
+      mouseClicked: () => {} 
+    };
+  }
+  return el;
+}
+
 function windowResized() {
-    resizeCanvas(windowWidth, windowHeight);
-    initBuffers(windowWidth, windowHeight);
-    // Recenter title if desired, or let user adjust
+  resizeCanvas(windowWidth, windowHeight);
+  initBuffers(windowWidth, windowHeight);
 }
 
 function initBuffers(w, h) {
-    pg = createGraphics(w, h);
-    pg.textAlign(CENTER, CENTER);
-    pg.rectMode(CENTER);
-    
-    pgNoise = createGraphics(w, h);
-    pgNoise.noSmooth();
+  pg = createGraphics(w, h);
+  pg.textAlign(CENTER, CENTER);
+  pg.rectMode(CENTER);
+  
+  pgNoise = createGraphics(w, h);
+  pgNoise.noSmooth();
 }
 
 function setupUI() {
-  // Sidebar Toggle
+  // Use vanilla JS for event listeners on Toggles for consistency
   const toggleBtn = document.getElementById('sidebar-toggle');
   const controls = document.getElementById('controls');
+  
   if(toggleBtn && controls) {
-      toggleBtn.addEventListener('click', () => {
-          controls.classList.toggle('hidden');
-      });
-  }
-
-  // Logic to handle collapsible sections
-  const jitterToggle = document.getElementById('jitter-enabled');
-  const jitterContent = document.getElementById('jitter-controls');
-  
-  const gradientToggle = document.getElementById('gradient-enabled');
-  const gradientContent = document.getElementById('gradient-controls');
-  
-  const grainToggle = document.getElementById('grain-enabled');
-  const grainContent = document.getElementById('grain-controls');
-  
-  function updateVisibility() {
-    if (jitterToggle && jitterContent) {
-        if (jitterToggle.checked) jitterContent.classList.remove('hidden');
-        else jitterContent.classList.add('hidden');
-    }
-    
-    if (gradientToggle && gradientContent) {
-        if (gradientToggle.checked) gradientContent.classList.remove('hidden');
-        else gradientContent.classList.add('hidden');
-    }
-
-    if (grainToggle && grainContent) {
-        if (grainToggle.checked) grainContent.classList.remove('hidden');
-        else grainContent.classList.add('hidden');
-    }
+    toggleBtn.addEventListener('click', () => {
+      controls.classList.toggle('hidden');
+    });
   }
   
-  if(jitterToggle) jitterToggle.addEventListener('change', updateVisibility);
-  if(gradientToggle) gradientToggle.addEventListener('change', updateVisibility);
-  if(grainToggle) grainToggle.addEventListener('change', updateVisibility);
-  
-  updateVisibility();
+  // Section Toggles
+  const bindToggle = (toggleId, contentId) => {
+    const t = document.getElementById(toggleId);
+    const c = document.getElementById(contentId);
+    if(t && c) {
+      const update = () => {
+        if(t.checked) c.classList.remove('hidden');
+        else c.classList.add('hidden');
+      };
+      t.addEventListener('change', update);
+      update(); // Init state
+    }
+  };
+
+  bindToggle('jitter-enabled', 'jitter-controls');
+  bindToggle('gradient-enabled', 'gradient-controls');
+  bindToggle('grain-enabled', 'grain-controls');
 }
 
 function draw() {
-  pg.background(colorBg.value());
-  
+  // Defensive check: if pg failed to init
+  if(!pg) return;
+
+  let bgVal = colorBg ? colorBg.value() : '#111';
+  pg.background(bgVal);
+
   drawMainText(pg);
   drawOverlay(pg);
-  
+
+  // Render to main
   blendMode(BLEND);
-  background(colorBg.value());
-  
+  background(bgVal);
+
   if (checkboxGradient && checkboxGradient.checked()) {
     applyGradientMap();
   } else {
     image(pg, 0, 0);
   }
-  
+
   if (checkboxGrain && checkboxGrain.checked()) {
     applyGrain();
   }
@@ -170,7 +183,7 @@ function draw() {
 function drawMainText(target) {
   let txtSize = sliderTextSize.value();
   target.textSize(txtSize);
-  target.textFont('Anton');
+  target.textFont('Anton'); // Assuming font loaded via Google Fonts
   
   let lines = [inputLine1.value(), inputLine2.value(), inputLine3.value()];
   let centerX = sliderTitleX.value();
@@ -181,8 +194,8 @@ function drawMainText(target) {
   else if (alignMode === 'RIGHT') target.textAlign(RIGHT, CENTER);
   else target.textAlign(CENTER, CENTER);
 
-  let startY = centerY - txtSize * 1.0; 
   let lineHeight = txtSize * 0.9;
+  let startY = centerY - (lineHeight * (lines.length - 1)) / 2;
   
   let speed = sliderJitterSpeed.value();
   let amount = sliderJitterAmount.value();
@@ -192,31 +205,29 @@ function drawMainText(target) {
     let yBase = startY + i * lineHeight;
     let txt = lines[i];
     
+    // Shadow
     target.fill(colorShadow.value());
     target.push();
-    let nX_shadow = 0, nY_shadow = 0, nR_shadow = 0;
-    
+    let nX_s = 0, nY_s = 0, nR_s = 0;
     if (isJitter) {
-      nX_shadow = noise(frameCount * speed + i * 10 + 100) * amount - amount/2;
-      nY_shadow = noise(frameCount * speed + i * 10 + 200) * amount - amount/2;
-      nR_shadow = noise(frameCount * speed + i * 10 + 300) * 0.1 - 0.05;
+      nX_s = noise(frameCount * speed + i*10 + 100) * amount - amount/2;
+      nY_s = noise(frameCount * speed + i*10 + 200) * amount - amount/2;
+      nR_s = noise(frameCount * speed + i*10 + 300) * 0.1 - 0.05;
     }
-    
-    target.translate(centerX + 10 + nX_shadow, yBase + 10 + nY_shadow);
-    target.rotate(nR_shadow);
+    target.translate(centerX + 10 + nX_s, yBase + 10 + nY_s);
+    target.rotate(nR_s);
     target.text(txt, 0, 0);
     target.pop();
     
+    // Face
     target.fill(colorFace.value());
     target.push();
     let nX = 0, nY = 0, nR = 0;
-    
     if (isJitter) {
-      nX = noise(frameCount * speed + i * 10) * amount - amount/2;
-      nY = noise(frameCount * speed + i * 10 + 50) * amount - amount/2;
-      nR = noise(frameCount * speed + i * 10 + 60) * 0.1 - 0.05;
+      nX = noise(frameCount * speed + i*10) * amount - amount/2;
+      nY = noise(frameCount * speed + i*10 + 50) * amount - amount/2;
+      nR = noise(frameCount * speed + i*10 + 60) * 0.1 - 0.05;
     }
-    
     target.translate(centerX + nX, yBase + nY);
     target.rotate(nR);
     target.text(txt, 0, 0);
@@ -228,7 +239,6 @@ function drawOverlay(target) {
   target.textFont('Space Mono');
   target.textSize(14);
   
-  // Dynamic Y positions relative to screen height
   let yPositions = [50, target.height * 0.25, target.height * 0.75, target.height - 50];
   let isJitter = checkboxJitter.checked();
   
@@ -236,7 +246,7 @@ function drawOverlay(target) {
     let p = {
       left: overlayInputs[i].l.value(),
       right: overlayInputs[i].r.value(),
-      y: yPositions[i]
+      y: yPositions[i] || 0
     };
 
     let ox = 0, oy = 0;
@@ -247,7 +257,6 @@ function drawOverlay(target) {
     
     let ly = p.y + oy;
     let margin = 40;
-
     let leftX = margin + ox;
     let rightX = target.width - margin + ox;
     
@@ -260,6 +269,7 @@ function drawOverlay(target) {
     target.textAlign(RIGHT, CENTER);
     target.text(p.right, rightX, ly);
     
+    // Dotted line
     target.stroke(colorOverlayLines.value());
     target.drawingContext.setLineDash([2, 5]);
     target.strokeWeight(1);
@@ -267,8 +277,8 @@ function drawOverlay(target) {
     let leftW = target.textWidth(p.left);
     let rightW = target.textWidth(p.right);
     
-    let lineStart = leftX + leftW + 10;
-    let lineEnd = rightX - rightW - 10;
+    let lineStart = leftX + leftW + 15;
+    let lineEnd = rightX - rightW - 15;
     
     if (lineStart < lineEnd) {
       target.line(lineStart, ly, lineEnd, ly);
@@ -309,6 +319,7 @@ function drawBadge(target) {
 
 function applyGradientMap() {
   pg.loadPixels();
+  loadPixels(); // main canvas
   
   let cStart = color(colorGradientStart.value());
   let cEnd = color(colorGradientEnd.value());
@@ -316,24 +327,23 @@ function applyGradientMap() {
   let r1 = red(cStart), g1 = green(cStart), b1 = blue(cStart);
   let r2 = red(cEnd), g2 = green(cEnd), b2 = blue(cEnd);
   
-  loadPixels();
-  
   let d = pixelDensity();
   let fullLen = 4 * (width * d) * (height * d);
   
+  if (pg.pixels.length < fullLen) return; // safety check
+
   for (let i = 0; i < fullLen; i += 4) {
     let r = pg.pixels[i];
     let g = pg.pixels[i+1];
     let b = pg.pixels[i+2];
     
-    let lum = (r + g + b) / 3 / 255; 
+    let lum = (r + g + b) / 765; // Normalized 0-1
     
     pixels[i] = r1 + (r2 - r1) * lum;
     pixels[i+1] = g1 + (g2 - g1) * lum;
     pixels[i+2] = b1 + (b2 - b1) * lum;
     pixels[i+3] = 255;
   }
-  
   updatePixels();
 }
 
@@ -341,9 +351,10 @@ function applyGrain() {
   let amount = sliderGrainAmount.value();
   let freq = sliderGrainFrequency.value();
   let animated = checkboxGrainAnimated.checked();
-  let mode = selectGrainBlend.value();
   let type = selectGrainType.value();
+  let mode = selectGrainBlend.value();
   
+  // Map Blend Mode
   let bm = BLEND;
   if (mode === 'OVERLAY') bm = OVERLAY;
   else if (mode === 'MULTIPLY') bm = MULTIPLY;
@@ -354,55 +365,56 @@ function applyGrain() {
   let noiseW = Math.floor(width / freq);
   let noiseH = Math.floor(height / freq);
   
+  if (noiseW < 1 || noiseH < 1) return; // safety
+
   let needsUpdate = false;
   if (pgNoise.width !== noiseW || pgNoise.height !== noiseH) {
-      pgNoise = createGraphics(noiseW, noiseH);
-      pgNoise.noSmooth();
-      needsUpdate = true;
+    pgNoise = createGraphics(noiseW, noiseH);
+    pgNoise.noSmooth();
+    needsUpdate = true;
   }
   
   if (animated || frameCount === 1 || needsUpdate) {
-      pgNoise.loadPixels();
-      let d = pgNoise.pixelDensity();
-      let len = 4 * (pgNoise.width * d) * (pgNoise.height * d);
-      
-      if (type === 'SCANLINES') {
-        let lineSpacing = 2;
-        for (let y = 0; y < pgNoise.height * d; y++) {
-             let isLine = (y % lineSpacing) === 0;
-             if (animated) {
-                 let phase = frameCount % lineSpacing;
-                 isLine = ((y + phase) % lineSpacing) === 0;
-             }
-             
-             for (let x = 0; x < pgNoise.width * d; x++) {
-                 let idx = 4 * (y * pgNoise.width * d + x);
-                 if (isLine) {
-                     pgNoise.pixels[idx] = 0;
-                     pgNoise.pixels[idx+1] = 0;
-                     pgNoise.pixels[idx+2] = 0;
-                     pgNoise.pixels[idx+3] = amount; 
-                 } else {
-                     pgNoise.pixels[idx+3] = 0; 
-                 }
-             }
-        }
-      } else {
-          for (let i = 0; i < len; i += 4) {
-              if (type === 'COLOR') {
-                  pgNoise.pixels[i] = random(255);   
-                  pgNoise.pixels[i+1] = random(255); 
-                  pgNoise.pixels[i+2] = random(255); 
-              } else {
-                  let val = random(255);
-                  pgNoise.pixels[i] = val;
-                  pgNoise.pixels[i+1] = val;
-                  pgNoise.pixels[i+2] = val;
-              }
-              pgNoise.pixels[i+3] = amount;
-          }
-      }
-      pgNoise.updatePixels();
+    pgNoise.loadPixels();
+    let d = pgNoise.pixelDensity();
+    let len = 4 * (pgNoise.width * d) * (pgNoise.height * d);
+    
+    if (type === 'SCANLINES') {
+       let lineSpacing = 2;
+       for (let y = 0; y < pgNoise.height * d; y++) {
+         let isLine = (y % lineSpacing) === 0;
+         if (animated) {
+            let phase = frameCount % lineSpacing;
+            isLine = ((y + phase) % lineSpacing) === 0;
+         }
+         for (let x = 0; x < pgNoise.width * d; x++) {
+           let idx = 4 * (y * pgNoise.width * d + x);
+           if (isLine) {
+             pgNoise.pixels[idx] = 0; 
+             pgNoise.pixels[idx+1] = 0; 
+             pgNoise.pixels[idx+2] = 0; 
+             pgNoise.pixels[idx+3] = amount; 
+           } else {
+             pgNoise.pixels[idx+3] = 0; 
+           }
+         }
+       }
+    } else {
+       for (let i = 0; i < len; i += 4) {
+         if (type === 'COLOR') {
+           pgNoise.pixels[i] = random(255);   
+           pgNoise.pixels[i+1] = random(255); 
+           pgNoise.pixels[i+2] = random(255); 
+         } else {
+           let val = random(255);
+           pgNoise.pixels[i] = val; 
+           pgNoise.pixels[i+1] = val; 
+           pgNoise.pixels[i+2] = val; 
+         }
+         pgNoise.pixels[i+3] = amount;
+       }
+    }
+    pgNoise.updatePixels();
   }
   
   blendMode(bm);
