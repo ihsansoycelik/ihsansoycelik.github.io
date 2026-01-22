@@ -30,6 +30,36 @@ document.addEventListener('DOMContentLoaded', () => {
             author: "Me",
             tech: "p5.js",
             backgroundColor: "#0022AA"
+        },
+        {
+            title: "CRT Simulation",
+            tag: "Visual",
+            category: "Experiments",
+            url: "crt-simulation/index.html",
+            date: "2023-11-01",
+            author: "Me",
+            tech: "p5.js",
+            backgroundColor: "#111111" // Assuming dark background for CRT
+        },
+        {
+            title: "Dither Lab",
+            tag: "Tools",
+            category: "Tools",
+            url: "dither-lab/index.html",
+            date: "2023-10-15",
+            author: "Me",
+            tech: "Vanilla JS",
+            backgroundColor: "#222222" // Dark UI
+        },
+        {
+            title: "Task Tracker",
+            tag: "Tools",
+            category: "Tools",
+            url: "task-tracker/index.html",
+            date: "2023-09-01",
+            author: "Me",
+            tech: "Vanilla JS",
+            backgroundColor: "#F5F5F7" // Light UI (MacOS style)
         }
     ];
 

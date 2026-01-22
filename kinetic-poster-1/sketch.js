@@ -175,7 +175,8 @@ const sketch = (p) => {
       let x = (p.width / 2) - (b.w / 2);
       let y = startY + i * fontSize;
 
-      let pts = currentFont.textToPoints(str, x, y, fontSize, { sampleFactor: 0.25 });
+      // Increased sampleFactor for higher fidelity (smoother curves)
+      let pts = currentFont.textToPoints(str, x, y, fontSize, { sampleFactor: 0.8 });
 
       let lineContours = [];
       let currentContour = [];
