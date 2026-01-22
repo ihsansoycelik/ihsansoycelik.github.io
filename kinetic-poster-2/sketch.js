@@ -5,9 +5,6 @@ let checkboxJitter;
 let sliderTitleX, sliderTitleY;
 let overlayInputs = [];
 
-// Canvas Size Controls
-let inputCanvasW, inputCanvasH, btnApplySize;
-
 // Color Pickers
 let colorBg, colorFace, colorShadow;
 let colorOverlayText, colorOverlayLines;
@@ -25,14 +22,11 @@ let pg;       // Main content buffer
 let pgNoise;  // Noise texture buffer
 
 function setup() {
-  const canvas = createCanvas(600, 800);
+  const canvas = createCanvas(windowWidth, windowHeight);
   canvas.parent('canvas-container');
   
-  // Setup UI Collapsible Logic
-  setupUI();
-
   // Create offscreen graphics buffer
-  initBuffers(600, 800);
+  initBuffers(windowWidth, windowHeight);
   
   // Select HTML elements
   inputLine1 = select('#text-line-1');
@@ -48,21 +42,9 @@ function setup() {
   sliderTitleX = select('#title-x');
   sliderTitleY = select('#title-y');
 
-  // Canvas Size Inputs
-  inputCanvasW = select('#canvas-width');
-  inputCanvasH = select('#canvas-height');
-  btnApplySize = select('#apply-size');
-  
-  if (btnApplySize) {
-      btnApplySize.mousePressed(() => {
-          let w = parseInt(inputCanvasW.value());
-          let h = parseInt(inputCanvasH.value());
-          if (w > 0 && h > 0) {
-              resizeCanvas(w, h);
-              initBuffers(w, h);
-          }
-      });
-  }
+  // Set initial position to center
+  if(sliderTitleX) sliderTitleX.value(width/2);
+  if(sliderTitleY) sliderTitleY.value(height/2);
 
   // Select Overlay inputs
   for (let i = 1; i <= 4; i++) {
@@ -100,8 +82,16 @@ function setup() {
   selectGrainBlend = select('#grain-blend');
   selectGrainType = select('#grain-type');
   
+  setupUI();
+  
   textAlign(CENTER, CENTER);
   rectMode(CENTER);
+}
+
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+    initBuffers(windowWidth, windowHeight);
+    // Recenter title if desired, or let user adjust
 }
 
 function initBuffers(w, h) {
@@ -109,13 +99,21 @@ function initBuffers(w, h) {
     pg.textAlign(CENTER, CENTER);
     pg.rectMode(CENTER);
     
-    // Initial noise buffer (size will be dynamic based on freq, but init here)
     pgNoise = createGraphics(w, h);
-    pgNoise.noSmooth(); // Important for chunky pixels
+    pgNoise.noSmooth();
 }
 
 function setupUI() {
-  // Logic to handle collapsible sections based on toggle state
+  // Sidebar Toggle
+  const toggleBtn = document.getElementById('sidebar-toggle');
+  const controls = document.getElementById('controls');
+  if(toggleBtn && controls) {
+      toggleBtn.addEventListener('click', () => {
+          controls.classList.toggle('hidden');
+      });
+  }
+
+  // Logic to handle collapsible sections
   const jitterToggle = document.getElementById('jitter-enabled');
   const jitterContent = document.getElementById('jitter-controls');
   
@@ -126,44 +124,45 @@ function setupUI() {
   const grainContent = document.getElementById('grain-controls');
   
   function updateVisibility() {
-    if (jitterToggle.checked) jitterContent.classList.remove('hidden');
-    else jitterContent.classList.add('hidden');
+    if (jitterToggle && jitterContent) {
+        if (jitterToggle.checked) jitterContent.classList.remove('hidden');
+        else jitterContent.classList.add('hidden');
+    }
     
-    if (gradientToggle.checked) gradientContent.classList.remove('hidden');
-    else gradientContent.classList.add('hidden');
+    if (gradientToggle && gradientContent) {
+        if (gradientToggle.checked) gradientContent.classList.remove('hidden');
+        else gradientContent.classList.add('hidden');
+    }
 
-    if (grainToggle.checked) grainContent.classList.remove('hidden');
-    else grainContent.classList.add('hidden');
+    if (grainToggle && grainContent) {
+        if (grainToggle.checked) grainContent.classList.remove('hidden');
+        else grainContent.classList.add('hidden');
+    }
   }
   
-  // Listeners
-  jitterToggle.addEventListener('change', updateVisibility);
-  gradientToggle.addEventListener('change', updateVisibility);
-  grainToggle.addEventListener('change', updateVisibility);
+  if(jitterToggle) jitterToggle.addEventListener('change', updateVisibility);
+  if(gradientToggle) gradientToggle.addEventListener('change', updateVisibility);
+  if(grainToggle) grainToggle.addEventListener('change', updateVisibility);
   
-  // Init
   updateVisibility();
 }
 
 function draw() {
-  // 1. Draw to Offscreen Buffer
   pg.background(colorBg.value());
   
   drawMainText(pg);
   drawOverlay(pg);
   
-  // 2. Render to Main Canvas
   blendMode(BLEND);
   background(colorBg.value());
   
-  if (checkboxGradient.checked()) {
+  if (checkboxGradient && checkboxGradient.checked()) {
     applyGradientMap();
   } else {
     image(pg, 0, 0);
   }
   
-  // 3. Apply Grain
-  if (checkboxGrain.checked()) {
+  if (checkboxGrain && checkboxGrain.checked()) {
     applyGrain();
   }
 }
@@ -177,7 +176,6 @@ function drawMainText(target) {
   let centerX = sliderTitleX.value();
   let centerY = sliderTitleY.value();
 
-  // Alignment Logic
   let alignMode = selectTextAlign.value(); 
   if (alignMode === 'LEFT') target.textAlign(LEFT, CENTER);
   else if (alignMode === 'RIGHT') target.textAlign(RIGHT, CENTER);
@@ -194,7 +192,6 @@ function drawMainText(target) {
     let yBase = startY + i * lineHeight;
     let txt = lines[i];
     
-    // Shadow Layer
     target.fill(colorShadow.value());
     target.push();
     let nX_shadow = 0, nY_shadow = 0, nR_shadow = 0;
@@ -210,7 +207,6 @@ function drawMainText(target) {
     target.text(txt, 0, 0);
     target.pop();
     
-    // Face Layer
     target.fill(colorFace.value());
     target.push();
     let nX = 0, nY = 0, nR = 0;
@@ -232,6 +228,7 @@ function drawOverlay(target) {
   target.textFont('Space Mono');
   target.textSize(14);
   
+  // Dynamic Y positions relative to screen height
   let yPositions = [50, target.height * 0.25, target.height * 0.75, target.height - 50];
   let isJitter = checkboxJitter.checked();
   
@@ -242,7 +239,6 @@ function drawOverlay(target) {
       y: yPositions[i]
     };
 
-    // Jitter
     let ox = 0, oy = 0;
     if (isJitter) {
       ox = noise(frameCount * 0.01 + p.y) * 4 - 2;
@@ -252,13 +248,9 @@ function drawOverlay(target) {
     let ly = p.y + oy;
     let margin = 40;
 
-    // Left Alignment Point
     let leftX = margin + ox;
-    
-    // Right Alignment Point
     let rightX = target.width - margin + ox;
     
-    // Text
     target.fill(colorOverlayText.value());
     target.noStroke();
     
@@ -268,7 +260,6 @@ function drawOverlay(target) {
     target.textAlign(RIGHT, CENTER);
     target.text(p.right, rightX, ly);
     
-    // Dotted line
     target.stroke(colorOverlayLines.value());
     target.drawingContext.setLineDash([2, 5]);
     target.strokeWeight(1);
@@ -276,7 +267,6 @@ function drawOverlay(target) {
     let leftW = target.textWidth(p.left);
     let rightW = target.textWidth(p.right);
     
-    // Draw line from end of left text to start of right text
     let lineStart = leftX + leftW + 10;
     let lineEnd = rightX - rightW - 10;
     
@@ -326,15 +316,10 @@ function applyGradientMap() {
   let r1 = red(cStart), g1 = green(cStart), b1 = blue(cStart);
   let r2 = red(cEnd), g2 = green(cEnd), b2 = blue(cEnd);
   
-  // Use a temporary graphic or draw directly to canvas pixels
-  // Because blendMode(BLEND) is on, we can draw the result as an image or just manipulate pixels on main canvas
   loadPixels();
   
   let d = pixelDensity();
   let fullLen = 4 * (width * d) * (height * d);
-  
-  // Warning: This is slow for large canvases.
-  // Ideally this would be a shader, but for p5.js vanilla, pixel manipulation is the way.
   
   for (let i = 0; i < fullLen; i += 4) {
     let r = pg.pixels[i];
@@ -357,9 +342,8 @@ function applyGrain() {
   let freq = sliderGrainFrequency.value();
   let animated = checkboxGrainAnimated.checked();
   let mode = selectGrainBlend.value();
-  let type = selectGrainType.value(); // MONO, COLOR, SCANLINES
+  let type = selectGrainType.value();
   
-  // Map Blend Mode string to p5 constant
   let bm = BLEND;
   if (mode === 'OVERLAY') bm = OVERLAY;
   else if (mode === 'MULTIPLY') bm = MULTIPLY;
@@ -367,7 +351,6 @@ function applyGrain() {
   else if (mode === 'DIFFERENCE') bm = DIFFERENCE;
   else if (mode === 'ADD') bm = ADD;
   
-  // Resize Noise Buffer if needed (Coarse grain = smaller buffer stretched up)
   let noiseW = Math.floor(width / freq);
   let noiseH = Math.floor(height / freq);
   
@@ -378,19 +361,15 @@ function applyGrain() {
       needsUpdate = true;
   }
   
-  // Optimization: Only update noise pixels if animated OR first frame OR buffer resized
   if (animated || frameCount === 1 || needsUpdate) {
       pgNoise.loadPixels();
       let d = pgNoise.pixelDensity();
       let len = 4 * (pgNoise.width * d) * (pgNoise.height * d);
       
       if (type === 'SCANLINES') {
-        // Horizontal lines pattern
-        let lineSpacing = 2; // Every 2nd pixel row
+        let lineSpacing = 2;
         for (let y = 0; y < pgNoise.height * d; y++) {
-             // For scanlines, we can just check y % spacing
              let isLine = (y % lineSpacing) === 0;
-             // We can also animate the phase
              if (animated) {
                  let phase = frameCount % lineSpacing;
                  isLine = ((y + phase) % lineSpacing) === 0;
@@ -398,33 +377,29 @@ function applyGrain() {
              
              for (let x = 0; x < pgNoise.width * d; x++) {
                  let idx = 4 * (y * pgNoise.width * d + x);
-                 // If it's a line, draw dark or light depending on desired effect
-                 // Usually scanlines darken. Let's make them black with alpha.
                  if (isLine) {
                      pgNoise.pixels[idx] = 0;
                      pgNoise.pixels[idx+1] = 0;
                      pgNoise.pixels[idx+2] = 0;
                      pgNoise.pixels[idx+3] = amount; 
                  } else {
-                     pgNoise.pixels[idx+3] = 0; // Transparent
+                     pgNoise.pixels[idx+3] = 0; 
                  }
              }
         }
       } else {
-          // MONO or COLOR
           for (let i = 0; i < len; i += 4) {
               if (type === 'COLOR') {
-                  pgNoise.pixels[i] = random(255);   // R
-                  pgNoise.pixels[i+1] = random(255); // G
-                  pgNoise.pixels[i+2] = random(255); // B
+                  pgNoise.pixels[i] = random(255);   
+                  pgNoise.pixels[i+1] = random(255); 
+                  pgNoise.pixels[i+2] = random(255); 
               } else {
-                  // MONO
                   let val = random(255);
                   pgNoise.pixels[i] = val;
                   pgNoise.pixels[i+1] = val;
                   pgNoise.pixels[i+2] = val;
               }
-              pgNoise.pixels[i+3] = amount; // Alpha controls intensity
+              pgNoise.pixels[i+3] = amount;
           }
       }
       pgNoise.updatePixels();
@@ -432,5 +407,5 @@ function applyGrain() {
   
   blendMode(bm);
   image(pgNoise, 0, 0, width, height);
-  blendMode(BLEND); // Reset
+  blendMode(BLEND); 
 }

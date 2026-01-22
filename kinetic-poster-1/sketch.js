@@ -36,26 +36,52 @@ const sketch = (p) => {
 
   p.setup = () => {
     const container = document.getElementById('v1');
-    container.innerHTML = '';
+    container.innerHTML = ''; // Clear previous content
 
+    // CSS for Fullscreen + Floating Sidebar
     let css = `
-      #v1 #main-container { display: flex; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #ffffff; }
-      #v1 #canvas-container { flex: 1; display: flex; justify-content: center; align-items: center; background: ${params.bgColor}; position: relative; overflow: hidden; }
-      #v1 #sidebar { width: 320px; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-left: 1px solid rgba(255, 255, 255, 0.1); padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; flex-shrink: 0; box-sizing: border-box; z-index: 10; }
-      #v1 .control-section { background: rgba(255, 255, 255, 0.08); border-radius: 10px; overflow: hidden; }
-      #v1 .section-header { padding: 12px 14px; font-weight: 500; font-size: 13px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+      #v1 { position: relative; width: 100%; height: 100%; overflow: hidden; }
+      #v1 #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+      #v1 #sidebar-toggle {
+        position: absolute; top: 20px; right: 20px; z-index: 20;
+        width: 40px; height: 40px; border-radius: 50%;
+        background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2);
+        color: white; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; backdrop-filter: blur(5px);
+      }
+      #v1 #sidebar {
+        position: absolute; top: 70px; right: 20px; width: 300px;
+        max-height: calc(100% - 90px); overflow-y: auto;
+        background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
+        padding: 16px; display: flex; flex-direction: column; gap: 16px;
+        z-index: 19; transition: transform 0.3s ease, opacity 0.3s ease;
+        transform: translateX(0); opacity: 1;
+      }
+      #v1 #sidebar.hidden { transform: translateX(120%); opacity: 0; pointer-events: none; }
+      #v1 .control-section { background: rgba(255, 255, 255, 0.05); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+      #v1 .section-header { padding: 10px 14px; font-weight: 600; font-size: 11px; text-transform: uppercase; color: #888; letter-spacing: 1px; }
       #v1 .section-content { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+      #v1 input[type=range] { width: 100%; cursor: pointer; }
+      #v1 textarea { width: 100%; background: #222; border: 1px solid #444; color: white; padding: 8px; border-radius: 4px; resize: vertical; min-height: 80px; box-sizing: border-box; }
+      #v1 select { width: 100%; background: #222; color: white; border: 1px solid #444; padding: 8px; border-radius: 4px; }
     `;
     p.createElement('style', css).parent(container);
 
-    mainContainer = p.createDiv().id('main-container').parent(container);
-    let canvasContainer = p.createDiv().id('canvas-container').parent(mainContainer);
-    let sidebar = p.createDiv().id('sidebar').parent(mainContainer);
+    let canvasContainer = p.createDiv().id('canvas-container').parent(container);
+    
+    // Sidebar Toggle
+    let toggleBtn = p.createDiv().id('sidebar-toggle').parent(container);
+    toggleBtn.html('<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>');
+    toggleBtn.mousePressed(() => {
+        let sb = document.querySelector('#v1 #sidebar');
+        sb.classList.toggle('hidden');
+    });
 
-    let sidebarWidth = 320;
-    let cWidth = container.clientWidth > sidebarWidth ? container.clientWidth - sidebarWidth : container.clientWidth;
-    let cHeight = container.clientHeight;
-    let cnv = p.createCanvas(cWidth, cHeight);
+    let sidebar = p.createDiv().id('sidebar').parent(container);
+
+    // Full Screen Canvas
+    let cnv = p.createCanvas(p.windowWidth, p.windowHeight);
     cnv.parent(canvasContainer);
 
     setupSidebar(sidebar);
@@ -76,8 +102,8 @@ const sketch = (p) => {
 
   function setupSidebar(sidebar) {
     let textSection = p.createDiv().class('control-section').parent(sidebar);
+    p.createDiv('CONTENT').class('section-header').parent(textSection);
     let textContent = p.createDiv().class('section-content').parent(textSection);
-    p.createSpan('Content').parent(textContent);
     let txtArea = p.createElement('textarea', params.text).parent(textContent);
     txtArea.input(() => {
       params.text = txtArea.value();
@@ -85,7 +111,7 @@ const sketch = (p) => {
     });
 
     let fontContent = p.createDiv().class('control-section').parent(sidebar);
-    p.createDiv('Typography').class('section-header').parent(fontContent);
+    p.createDiv('TYPOGRAPHY').class('section-header').parent(fontContent);
     let fontInnerContent = p.createDiv().class('section-content').parent(fontContent);
     let fontSelect = p.createSelect().parent(fontInnerContent);
     for (let f in fontUrls) { fontSelect.option(f); }
@@ -97,10 +123,16 @@ const sketch = (p) => {
     });
 
     let animContent = p.createDiv().class('control-section').parent(sidebar);
-    p.createDiv('Animation').class('section-header').parent(animContent);
+    p.createDiv('ANIMATION').class('section-header').parent(animContent);
     let animInnerContent = p.createDiv().class('section-content').parent(animContent);
+    
+    p.createDiv('Frequency').style('font-size:10px;color:#888;margin-bottom:4px;').parent(animInnerContent);
     p.createSlider(0.01, 0.2, params.freq, 0.01).parent(animInnerContent).input((e) => params.freq = e.target.value);
+    
+    p.createDiv('Amplitude').style('font-size:10px;color:#888;margin-bottom:4px;').parent(animInnerContent);
     p.createSlider(0, 80, params.amp, 1).parent(animInnerContent).input((e) => params.amp = e.target.value);
+    
+    p.createDiv('Speed').style('font-size:10px;color:#888;margin-bottom:4px;').parent(animInnerContent);
     p.createSlider(0.01, 0.2, params.speed, 0.01).parent(animInnerContent).input((e) => params.speed = e.target.value);
   }
 
@@ -110,10 +142,7 @@ const sketch = (p) => {
   }
 
   p.windowResized = () => {
-    const container = document.getElementById('v1');
-    let sidebarWidth = 320;
-    let newWidth = container.clientWidth > sidebarWidth ? container.clientWidth - sidebarWidth : container.clientWidth;
-    p.resizeCanvas(newWidth, container.clientHeight);
+    p.resizeCanvas(p.windowWidth, p.windowHeight);
     updateGeometry();
   }
 
@@ -128,8 +157,14 @@ const sketch = (p) => {
       let b = currentFont.textBounds(str, 0, 0, testSize);
       if (b.w > maxW) maxW = b.w;
     }
+    // Prevent divide by zero if text is empty
+    if (maxW === 0) maxW = 1;
+
     let scaleFactor = targetW / maxW;
     fontSize = testSize * scaleFactor;
+    
+    // Clamp max font size so it doesn't get absurdly huge on few chars
+    fontSize = p.min(fontSize, p.height / textLines.length * 0.8);
 
     let totalH = textLines.length * fontSize;
     let startY = (p.height / 2) - (totalH / 2) + (fontSize * 0.75);
@@ -192,7 +227,7 @@ const sketch = (p) => {
   }
 
   p.remove = () => {
-    mainContainer.remove();
-    document.body.style.backgroundColor = '#111';
+     // Cleanup if needed
+     document.body.style.backgroundColor = '';
   }
 };

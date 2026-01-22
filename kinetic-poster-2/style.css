@@ -1,10 +1,10 @@
 :root {
   --bg-color: #111;
-  --panel-bg: #1c1c1e;
-  --panel-border: #2c2c2e;
+  --panel-bg: rgba(28, 28, 30, 0.85);
+  --panel-border: rgba(255, 255, 255, 0.1);
   --text-color: #f2f2f7;
   --label-color: #8e8e93;
-  --input-bg: #2c2c2e;
+  --input-bg: rgba(0,0,0,0.3);
   --accent-color: #0a84ff;
 }
 
@@ -14,63 +14,113 @@ body {
   background-color: var(--bg-color);
   color: var(--text-color);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: 100vh;
-  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 #app-container {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 20px;
-  padding: 20px;
+  position: relative;
   width: 100%;
-  max-width: 1400px;
-  flex-wrap: wrap;
-  justify-content: center;
+  height: 100%;
 }
 
 #canvas-container {
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-  border-radius: 4px;
-  overflow: hidden;
-  border: 1px solid #333;
-  position: sticky;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+canvas {
+  display: block;
+}
+
+/* Sidebar Toggle Button */
+#sidebar-toggle {
+  position: absolute;
   top: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  cursor: pointer;
+  color: white;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 #controls {
-  flex: 1;
-  min-width: 300px;
-  max-width: 400px;
+  position: absolute;
+  top: 80px;
+  right: 20px;
+  width: 320px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  z-index: 99;
+  
+  background-color: var(--panel-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+  transform: translateX(0);
+  opacity: 1;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+#controls.hidden {
+  transform: translateX(120%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Hide scrollbar but keep functionality */
+#controls::-webkit-scrollbar {
+  width: 4px;
+}
+#controls::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 2px;
 }
 
 h2 {
-  margin: 0 0 10px 0;
-  font-size: 1.5rem;
+  margin: 0 0 16px 0;
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--label-color);
+  border-bottom: 1px solid var(--panel-border);
+  padding-bottom: 10px;
 }
 
 /* Section Styling */
 .control-section {
-  background-color: rgba(28, 28, 30, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 16px;
-  border: 1px solid var(--panel-border);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid transparent;
 }
 
 .control-section h3 {
-  margin: 0 0 12px 0;
-  font-size: 0.9rem;
+  margin: 0 0 10px 0;
+  font-size: 0.8rem;
   text-transform: uppercase;
   color: var(--label-color);
   font-weight: 600;
@@ -81,8 +131,8 @@ h2 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-  font-size: 0.9rem;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
 }
 
 .control-row:last-child {
@@ -98,19 +148,19 @@ h2 {
 input[type="text"],
 select {
   background: var(--input-bg);
-  border: none;
+  border: 1px solid var(--panel-border);
   border-radius: 6px;
   color: var(--text-color);
-  padding: 6px 10px;
-  font-size: 0.9rem;
-  width: 140px;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  width: 120px;
   text-align: right;
   outline: none;
 }
 
 input[type="text"]:focus,
 select:focus {
-  background: #3a3a3c;
+  border-color: var(--accent-color);
 }
 
 /* Range Slider */
@@ -122,12 +172,12 @@ input[type="range"] {
 
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  height: 18px;
-  width: 18px;
+  height: 14px;
+  width: 14px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  margin-top: -7px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  margin-top: -5px;
   cursor: pointer;
 }
 
@@ -135,7 +185,7 @@ input[type="range"]::-webkit-slider-runnable-track {
   width: 100%;
   height: 4px;
   cursor: pointer;
-  background: #48484a;
+  background: rgba(255,255,255,0.2);
   border-radius: 2px;
 }
 
@@ -143,21 +193,18 @@ input[type="range"]::-webkit-slider-runnable-track {
 input[type="color"] {
   -webkit-appearance: none;
   border: none;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: none;
   cursor: pointer;
   padding: 0;
   overflow: hidden;
-}
-
-input[type="color"]::-webkit-color-swatch-wrapper {
-  padding: 0;
+  border: 1px solid var(--panel-border);
 }
 
 input[type="color"]::-webkit-color-swatch {
-  border: 2px solid #fff;
+  border: none;
   border-radius: 50%;
 }
 
@@ -179,7 +226,7 @@ input[type="color"]::-webkit-color-swatch {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .section-header h3 {
@@ -190,8 +237,8 @@ input[type="color"]::-webkit-color-swatch {
 .toggle-switch {
   position: relative;
   display: inline-block;
-  width: 40px;
-  height: 24px;
+  width: 36px;
+  height: 20px;
 }
 
 .toggle-switch input {
@@ -209,14 +256,14 @@ input[type="color"]::-webkit-color-swatch {
   bottom: 0;
   background-color: #48484a;
   transition: .3s;
-  border-radius: 24px;
+  border-radius: 20px;
 }
 
 .slider:before {
   position: absolute;
   content: "";
-  height: 20px;
-  width: 20px;
+  height: 16px;
+  width: 16px;
   left: 2px;
   bottom: 2px;
   background-color: white;
@@ -239,7 +286,6 @@ input:checked+.slider:before {
   overflow: hidden;
   transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
   max-height: 500px;
-  /* Arbitrary large height */
   opacity: 1;
 }
 
@@ -250,7 +296,6 @@ input:checked+.slider:before {
   pointer-events: none;
 }
 
-/* Detail/Summary for Colors */
 details summary {
   cursor: pointer;
   list-style: none;
