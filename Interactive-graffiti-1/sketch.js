@@ -1,6 +1,8 @@
 // Global variables
 let pg; // Off-screen graphics buffer
 let markers = []; // Array to store stroke points if needed, but we draw directly to pg
+let undoStack = []; // Stack to store undo states
+const MAX_UNDO = 20;
 let uiFont;
 
 // UI State Variables
@@ -92,8 +94,32 @@ function setupUI() {
   bind('brush-size', 'input', (e) => brushSize = parseFloat(e.target.value));
   
   bind('btn-clear', 'click', () => {
+    undoStack = []; // Clear undo stack on clear
     pg.clear();
   });
+
+  bind('btn-undo', 'click', () => {
+    undoLastStroke();
+  });
+}
+
+function undoLastStroke() {
+  if (undoStack.length > 0) {
+    let img = undoStack.pop();
+    pg.clear();
+    pg.image(img, 0, 0);
+  }
+}
+
+function mousePressed(e) {
+  // Don't draw if clicking on sidebar
+  if (e && e.target && (e.target.closest('#sidebar') || e.target.closest('#sidebar-toggle'))) return;
+
+  // Save state before new stroke
+  if (undoStack.length >= MAX_UNDO) {
+    undoStack.shift();
+  }
+  undoStack.push(pg.get());
 }
 
 function draw() {
