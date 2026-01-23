@@ -31,6 +31,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Core Logic ---
 
+    // Helper for accessible click events (Click + Enter/Space)
+    function addAccessibleClickListener(element, callback) {
+        element.addEventListener('click', callback);
+        element.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault(); // Prevent scrolling for Space
+                callback(e);
+            }
+        });
+    }
+
     function init() {
         renderSidebar();
         renderMainView();
@@ -93,8 +104,15 @@ document.addEventListener('DOMContentLoaded', () => {
         els.userLists.innerHTML = '';
         state.lists.forEach(list => {
             const li = document.createElement('li');
-            li.className = `list-row ${state.currentView === list.id ? 'active' : ''}`;
+            const isActive = state.currentView === list.id;
+            li.className = `list-row ${isActive ? 'active' : ''}`;
             li.dataset.id = list.id;
+
+            // Accessibility Attributes
+            li.setAttribute('role', 'button');
+            li.setAttribute('tabindex', '0');
+            li.setAttribute('aria-label', `Filter by ${list.name}`);
+            if (isActive) li.setAttribute('aria-current', 'true');
 
             const count = state.tasks.filter(t => t.listId === list.id && !t.completed).length;
 
@@ -108,17 +126,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="list-count">${count || ''}</span>
             `;
 
-            li.addEventListener('click', () => switchView(list.id));
+            addAccessibleClickListener(li, () => switchView(list.id));
             els.userLists.appendChild(li);
         });
-    }
 
         // Update Smart Cards Active State
         els.smartCards.forEach(card => {
-            if (card.dataset.list === state.currentView) {
+            const isActive = card.dataset.list === state.currentView;
+            if (isActive) {
                 card.classList.add('active');
+                card.setAttribute('aria-current', 'true');
             } else {
                 card.classList.remove('active');
+                card.removeAttribute('aria-current');
             }
         });
     }
@@ -213,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupEventListeners() {
         // Smart Cards
         els.smartCards.forEach(card => {
-            card.addEventListener('click', () => switchView(card.dataset.list));
+            addAccessibleClickListener(card, () => switchView(card.dataset.list));
         });
 
         // New Task Interaction
@@ -335,9 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Replace setupEventListeners placeholder logic with bindNewTask
-    els.smartCards.forEach(card => {
-        card.addEventListener('click', () => switchView(card.dataset.list));
-    });
     bindNewTask();
 
     // Start
