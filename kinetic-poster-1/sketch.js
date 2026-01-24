@@ -134,6 +134,42 @@ const sketch = (p) => {
     
     p.createDiv('Speed').style('font-size:10px;color:#888;margin-bottom:4px;').parent(animInnerContent);
     p.createSlider(0.01, 0.2, params.speed, 0.01).parent(animInnerContent).input((e) => params.speed = e.target.value);
+
+    // ECHO SECTION
+    let echoContent = p.createDiv().class('control-section').parent(sidebar);
+    p.createDiv('ECHO').class('section-header').parent(echoContent);
+    let echoInner = p.createDiv().class('section-content').parent(echoContent);
+
+    p.createDiv('Count').style('font-size:10px;color:#888;margin-bottom:4px;').parent(echoInner);
+    p.createSlider(1, 10, params.echoCount, 1).parent(echoInner).input((e) => params.echoCount = parseInt(e.target.value));
+
+    p.createDiv('Lag').style('font-size:10px;color:#888;margin-bottom:4px;').parent(echoInner);
+    p.createSlider(0, 20, params.echoLag, 1).parent(echoInner).input((e) => params.echoLag = parseInt(e.target.value));
+
+    // INTERACTION SECTION
+    let interContent = p.createDiv().class('control-section').parent(sidebar);
+    p.createDiv('INTERACTION').class('section-header').parent(interContent);
+    let interInner = p.createDiv().class('section-content').parent(interContent);
+
+    let row1 = p.createDiv().style('display:flex;justify-content:space-between;align-items:center;').parent(interInner);
+    p.createSpan('Mouse Interaction').style('font-size:12px;color:#ccc;').parent(row1);
+    p.createCheckbox('', params.mouseInteraction).parent(row1).changed(function() { params.mouseInteraction = this.checked(); });
+
+    p.createDiv('Radius').style('font-size:10px;color:#888;margin-bottom:4px;margin-top:8px;').parent(interInner);
+    p.createSlider(50, 500, params.mouseRadius, 10).parent(interInner).input((e) => params.mouseRadius = parseInt(e.target.value));
+
+    // STYLE SECTION
+    let styleContent = p.createDiv().class('control-section').parent(sidebar);
+    p.createDiv('STYLE').class('section-header').parent(styleContent);
+    let styleInner = p.createDiv().class('section-content').parent(styleContent);
+
+    let row2 = p.createDiv().style('display:flex;justify-content:space-between;align-items:center;').parent(styleInner);
+    p.createSpan('Use Gradient').style('font-size:12px;color:#ccc;').parent(row2);
+    p.createCheckbox('', params.useGradient).parent(row2).changed(function() { params.useGradient = this.checked(); });
+
+    let row3 = p.createDiv().style('display:flex;justify-content:space-between;align-items:center;margin-top:8px;').parent(styleInner);
+    p.createSpan('Use Noise').style('font-size:12px;color:#ccc;').parent(row3);
+    p.createCheckbox('', params.useNoise).parent(row3).changed(function() { params.useNoise = this.checked(); });
   }
 
   function updateGeometry() {
@@ -175,7 +211,7 @@ const sketch = (p) => {
       let x = (p.width / 2) - (b.w / 2);
       let y = startY + i * fontSize;
 
-      let pts = currentFont.textToPoints(str, x, y, fontSize, { sampleFactor: 0.25 });
+      let pts = currentFont.textToPoints(str, x, y, fontSize, { sampleFactor: 0.8 });
 
       let lineContours = [];
       let currentContour = [];
@@ -212,16 +248,75 @@ const sketch = (p) => {
     p.background(params.bgColor);
     if (fontLoaded) {
       p.noStroke();
-      for (let i = 0; i < fontData.length; i++) {
-        for (let contour of fontData[i]) {
-          p.fill(params.textColor);
-          p.beginShape();
-          for (let pt of contour) {
-            let wave = p.sin(pt.y * params.freq + p.frameCount * params.speed) * params.amp;
-            p.vertex(pt.x + wave, pt.y);
-          }
-          p.endShape(p.CLOSE);
+
+      let echoCount = params.echoCount;
+      let echoLag = params.echoLag;
+
+      // Draw echoes from back to front
+      for (let e = echoCount - 1; e >= 0; e--) {
+        let alpha = p.map(e, 0, echoCount, 255, 60);
+        let currentFill;
+
+        if (!params.useGradient) {
+           currentFill = p.color(params.textColor);
+           currentFill.setAlpha(alpha);
         }
+
+        for (let i = 0; i < fontData.length; i++) {
+          for (let contour of fontData[i]) {
+
+            // Gradient Logic
+            if (params.useGradient) {
+               if (contour.length > 0) {
+                  let y = contour[0].y;
+                  let inter = p.map(y, p.height/4, p.height*0.75, 0, 1);
+                  inter = p.constrain(inter, 0, 1);
+                  let c1 = p.color(params.gradientColor1);
+                  let c2 = p.color(params.gradientColor2);
+                  currentFill = p.lerpColor(c1, c2, inter);
+                  currentFill.setAlpha(alpha);
+               } else {
+                  currentFill = p.color(params.gradientColor1);
+                  currentFill.setAlpha(alpha);
+               }
+            }
+
+            p.fill(currentFill);
+            p.beginShape();
+            for (let pt of contour) {
+              // Wave Animation with Lag
+              let effectiveFrame = p.frameCount - (e * echoLag);
+
+              let wave = p.sin(pt.y * params.freq + effectiveFrame * params.speed) * params.amp;
+
+              let mx = pt.x + wave;
+              let my = pt.y;
+
+              // Mouse Interaction
+              if (params.mouseInteraction) {
+                 let d = p.dist(p.mouseX, p.mouseY, mx, my);
+                 if (d < params.mouseRadius) {
+                    let angle = p.atan2(my - p.mouseY, mx - p.mouseX);
+                    let force = (1 - d / params.mouseRadius) * 50;
+                    mx += p.cos(angle) * force;
+                    my += p.sin(angle) * force;
+                 }
+              }
+
+              p.vertex(mx, my);
+            }
+            p.endShape(p.CLOSE);
+          }
+        }
+      }
+
+      // Noise Overlay
+      if (params.useNoise && noiseImage) {
+        p.push();
+        p.blendMode(p.OVERLAY);
+        p.tint(255, params.noiseIntensity * 2.55);
+        p.image(noiseImage, 0, 0, p.width, p.height);
+        p.pop();
       }
     }
   }
