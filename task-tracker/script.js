@@ -111,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
             li.addEventListener('click', () => switchView(list.id));
             els.userLists.appendChild(li);
         });
-    }
 
         // Update Smart Cards Active State
         els.smartCards.forEach(card => {
@@ -137,13 +136,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const taskRow = document.createElement('div');
             taskRow.className = `task-row ${task.completed ? 'completed' : ''}`;
             taskRow.innerHTML = `
-                <div class="check-circle" role="button"></div>
+                <div class="check-circle" role="checkbox" tabindex="0" aria-checked="${task.completed}"></div>
                 <div class="task-content">
                     <input type="text" class="task-text" value="${escapeHtml(task.text)}" readonly>
                     <!-- <div class="task-details">Notes or Date</div> -->
                 </div>
                 <!-- Delete Icon (appears on hover) -->
-                <button class="delete-btn" aria-label="Delete">
+                <button class="delete-btn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -153,12 +152,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Event Listeners for Task Items
             const check = taskRow.querySelector('.check-circle');
+            check.setAttribute('aria-label', `${task.completed ? 'Mark as incomplete' : 'Mark as complete'}: ${task.text}`);
+
             check.addEventListener('click', (e) => {
                 e.stopPropagation();
                 toggleTask(task.id);
             });
 
+            check.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleTask(task.id);
+                }
+            });
+
             const deleteBtn = taskRow.querySelector('.delete-btn');
+            deleteBtn.setAttribute('aria-label', `Delete ${task.text}`);
             deleteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 deleteTask(task.id);
