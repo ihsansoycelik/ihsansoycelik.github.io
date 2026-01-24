@@ -347,7 +347,9 @@ body {
     padding: 4px;
 }
 
-.task-row:hover .delete-btn {
+.task-row:hover .delete-btn,
+.delete-btn:focus,
+.delete-btn:focus-visible {
     opacity: 1;
 }
 
