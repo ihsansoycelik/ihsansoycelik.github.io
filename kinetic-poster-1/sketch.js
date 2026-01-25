@@ -65,6 +65,7 @@ const sketch = (p) => {
       #v1 input[type=range] { width: 100%; cursor: pointer; }
       #v1 textarea { width: 100%; background: #222; border: 1px solid #444; color: white; padding: 8px; border-radius: 4px; resize: vertical; min-height: 80px; box-sizing: border-box; }
       #v1 select { width: 100%; background: #222; color: white; border: 1px solid #444; padding: 8px; border-radius: 4px; }
+      #v1 input[type=checkbox] { cursor: pointer; width: 20px; height: 20px; }
     `;
     p.createElement('style', css).parent(container);
 
@@ -134,6 +135,40 @@ const sketch = (p) => {
     
     p.createDiv('Speed').style('font-size:10px;color:#888;margin-bottom:4px;').parent(animInnerContent);
     p.createSlider(0.01, 0.2, params.speed, 0.01).parent(animInnerContent).input((e) => params.speed = e.target.value);
+
+    // Echo Controls
+    let echoContent = p.createDiv().class('control-section').parent(sidebar);
+    p.createDiv('ECHO').class('section-header').parent(echoContent);
+    let echoInner = p.createDiv().class('section-content').parent(echoContent);
+
+    p.createDiv('Count').style('font-size:10px;color:#888;margin-bottom:4px;').parent(echoInner);
+    p.createSlider(0, 20, params.echoCount, 1).parent(echoInner).input((e) => params.echoCount = parseInt(e.target.value));
+
+    p.createDiv('Lag').style('font-size:10px;color:#888;margin-bottom:4px;').parent(echoInner);
+    p.createSlider(0, 20, params.echoLag, 1).parent(echoInner).input((e) => params.echoLag = parseInt(e.target.value));
+
+    // Style Controls
+    let styleContent = p.createDiv().class('control-section').parent(sidebar);
+    p.createDiv('STYLE').class('section-header').parent(styleContent);
+    let styleInner = p.createDiv().class('section-content').parent(styleContent);
+
+    // Gradient Toggle
+    let gradDiv = p.createDiv().style('display:flex;align-items:center;justify-content:space-between;').parent(styleInner);
+    p.createSpan('Gradient').style('font-size:12px;color:white;').parent(gradDiv);
+    let gradCheck = p.createCheckbox('', params.useGradient).parent(gradDiv);
+    gradCheck.changed(() => params.useGradient = gradCheck.checked());
+
+    // Noise Toggle
+    let noiseDiv = p.createDiv().style('display:flex;align-items:center;justify-content:space-between;').parent(styleInner);
+    p.createSpan('Noise').style('font-size:12px;color:white;').parent(noiseDiv);
+    let noiseCheck = p.createCheckbox('', params.useNoise).parent(noiseDiv);
+    noiseCheck.changed(() => params.useNoise = noiseCheck.checked());
+
+    // Interaction Toggle
+    let interactDiv = p.createDiv().style('display:flex;align-items:center;justify-content:space-between;').parent(styleInner);
+    p.createSpan('Interaction').style('font-size:12px;color:white;').parent(interactDiv);
+    let intCheck = p.createCheckbox('', params.mouseInteraction).parent(interactDiv);
+    intCheck.changed(() => params.mouseInteraction = intCheck.checked());
   }
 
   function updateGeometry() {
@@ -175,7 +210,8 @@ const sketch = (p) => {
       let x = (p.width / 2) - (b.w / 2);
       let y = startY + i * fontSize;
 
-      let pts = currentFont.textToPoints(str, x, y, fontSize, { sampleFactor: 0.25 });
+      // High fidelity sample factor
+      let pts = currentFont.textToPoints(str, x, y, fontSize, { sampleFactor: 0.8 });
 
       let lineContours = [];
       let currentContour = [];
@@ -212,17 +248,80 @@ const sketch = (p) => {
     p.background(params.bgColor);
     if (fontLoaded) {
       p.noStroke();
-      for (let i = 0; i < fontData.length; i++) {
-        for (let contour of fontData[i]) {
-          p.fill(params.textColor);
-          p.beginShape();
-          for (let pt of contour) {
-            let wave = p.sin(pt.y * params.freq + p.frameCount * params.speed) * params.amp;
-            p.vertex(pt.x + wave, pt.y);
+
+      // Loop for Echoes (k from echoCount down to 0)
+      // k=0 is the main text
+      for (let k = params.echoCount; k >= 0; k--) {
+        // Calculate transparency
+        let alpha = 255;
+        if (k > 0) {
+            // Echoes fade out
+            alpha = p.map(k, 0, params.echoCount, 200, 20);
+        }
+
+        let timeOffset = -k * params.echoLag;
+
+        for (let i = 0; i < fontData.length; i++) {
+          for (let contour of fontData[i]) {
+
+            // Fill Logic
+            if (params.useGradient) {
+                let gradient = p.drawingContext.createLinearGradient(0, 0, p.width, p.height);
+                gradient.addColorStop(0, params.gradientColor1);
+                gradient.addColorStop(1, params.gradientColor2);
+                p.drawingContext.fillStyle = gradient;
+                // Use globalAlpha for transparency
+                p.drawingContext.globalAlpha = k > 0 ? p.map(k, 0, params.echoCount, 0.6, 0.1) : 1.0;
+            } else {
+                let c = p.color(params.textColor);
+                c.setAlpha(alpha);
+                p.fill(c);
+            }
+
+            p.beginShape();
+            for (let pt of contour) {
+              let mx = pt.x;
+              let my = pt.y;
+
+              // Mouse Interaction
+              if (params.mouseInteraction) {
+                 let d = p.dist(p.mouseX, p.mouseY, mx, my);
+                 if (d < params.mouseRadius) {
+                    let force = (params.mouseRadius - d) / params.mouseRadius;
+                    // Push points away
+                    let angle = p.atan2(my - p.mouseY, mx - p.mouseX);
+                    mx += p.cos(angle) * force * 50;
+                    my += p.sin(angle) * force * 50;
+                 }
+              }
+
+              let effectiveFrame = p.frameCount + timeOffset;
+              let wave = p.sin(my * params.freq + effectiveFrame * params.speed) * params.amp;
+              p.vertex(mx + wave, my);
+            }
+            p.endShape(p.CLOSE);
           }
-          p.endShape(p.CLOSE);
+        }
+
+        // Reset Global Alpha
+        if (params.useGradient) {
+             p.drawingContext.globalAlpha = 1.0;
         }
       }
+    }
+
+    // Noise Overlay
+    if (params.useNoise) {
+        p.blendMode(p.OVERLAY);
+        // Tile the noise
+        for (let x = 0; x < p.width; x += 200) {
+            for (let y = 0; y < p.height; y += 200) {
+                 p.tint(255, params.noiseIntensity);
+                 p.image(noiseImage, x, y);
+            }
+        }
+        p.noTint();
+        p.blendMode(p.BLEND);
     }
   }
 
