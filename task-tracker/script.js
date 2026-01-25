@@ -95,6 +95,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.className = `list-row ${state.currentView === list.id ? 'active' : ''}`;
             li.dataset.id = list.id;
+            li.setAttribute('tabindex', '0');
+            li.setAttribute('role', 'button');
+            li.setAttribute('aria-label', `Show ${list.name} tasks`);
 
             const count = state.tasks.filter(t => t.listId === list.id && !t.completed).length;
 
@@ -108,10 +111,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="list-count">${count || ''}</span>
             `;
 
-            li.addEventListener('click', () => switchView(list.id));
+            addAccessibleClickListener(li, () => switchView(list.id));
             els.userLists.appendChild(li);
         });
-    }
 
         // Update Smart Cards Active State
         els.smartCards.forEach(card => {
@@ -136,13 +138,17 @@ document.addEventListener('DOMContentLoaded', () => {
         tasks.forEach(task => {
             const taskRow = document.createElement('div');
             taskRow.className = `task-row ${task.completed ? 'completed' : ''}`;
+
+            // Create checkbox HTML with accessibility attributes
+            const ariaLabel = `Mark ${escapeHtml(task.text)} as ${task.completed ? 'incomplete' : 'complete'}`;
+
             taskRow.innerHTML = `
-                <div class="check-circle" role="button"></div>
+                <div class="check-circle" role="checkbox" tabindex="0" aria-checked="${task.completed}" aria-label="${ariaLabel}"></div>
                 <div class="task-content">
                     <input type="text" class="task-text" value="${escapeHtml(task.text)}" readonly>
                     <!-- <div class="task-details">Notes or Date</div> -->
                 </div>
-                <!-- Delete Icon (appears on hover) -->
+                <!-- Delete Icon (appears on hover or focus) -->
                 <button class="delete-btn" aria-label="Delete">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
@@ -153,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Event Listeners for Task Items
             const check = taskRow.querySelector('.check-circle');
-            check.addEventListener('click', (e) => {
+            addAccessibleClickListener(check, (e) => {
                 e.stopPropagation();
                 toggleTask(task.id);
             });
@@ -213,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupEventListeners() {
         // Smart Cards
         els.smartCards.forEach(card => {
-            card.addEventListener('click', () => switchView(card.dataset.list));
+            addAccessibleClickListener(card, () => switchView(card.dataset.list));
         });
 
         // New Task Interaction
@@ -334,10 +340,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return div.innerHTML;
     }
 
+    // Accessible Click Listener (Click + Enter/Space)
+    function addAccessibleClickListener(element, callback) {
+        element.addEventListener('click', callback);
+        element.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                callback(e);
+            }
+        });
+    }
+
     // Replace setupEventListeners placeholder logic with bindNewTask
-    els.smartCards.forEach(card => {
-        card.addEventListener('click', () => switchView(card.dataset.list));
-    });
     bindNewTask();
 
     // Start
