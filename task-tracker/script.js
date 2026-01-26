@@ -31,6 +31,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Core Logic ---
 
+    function addAccessibleClickListener(element, callback) {
+        element.addEventListener('click', callback);
+        element.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                callback(e);
+            }
+        });
+    }
+
     function init() {
         renderSidebar();
         renderMainView();
@@ -95,6 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.className = `list-row ${state.currentView === list.id ? 'active' : ''}`;
             li.dataset.id = list.id;
+            li.setAttribute('role', 'button');
+            li.setAttribute('tabindex', '0');
+            li.setAttribute('aria-label', `Select ${list.name} list`);
 
             const count = state.tasks.filter(t => t.listId === list.id && !t.completed).length;
 
@@ -108,10 +121,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="list-count">${count || ''}</span>
             `;
 
-            li.addEventListener('click', () => switchView(list.id));
+            addAccessibleClickListener(li, () => switchView(list.id));
             els.userLists.appendChild(li);
         });
-    }
 
         // Update Smart Cards Active State
         els.smartCards.forEach(card => {
@@ -137,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const taskRow = document.createElement('div');
             taskRow.className = `task-row ${task.completed ? 'completed' : ''}`;
             taskRow.innerHTML = `
-                <div class="check-circle" role="button"></div>
+                <div class="check-circle" role="checkbox" tabindex="0" aria-checked="${task.completed}" aria-label="Mark task as completed"></div>
                 <div class="task-content">
                     <input type="text" class="task-text" value="${escapeHtml(task.text)}" readonly>
                     <!-- <div class="task-details">Notes or Date</div> -->
@@ -153,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Event Listeners for Task Items
             const check = taskRow.querySelector('.check-circle');
-            check.addEventListener('click', (e) => {
+            addAccessibleClickListener(check, (e) => {
                 e.stopPropagation();
                 toggleTask(task.id);
             });
@@ -213,7 +225,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupEventListeners() {
         // Smart Cards
         els.smartCards.forEach(card => {
-            card.addEventListener('click', () => switchView(card.dataset.list));
+            card.setAttribute('role', 'button');
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('aria-label', `Select ${card.querySelector('.label').textContent} list`);
+            addAccessibleClickListener(card, () => switchView(card.dataset.list));
         });
 
         // New Task Interaction
