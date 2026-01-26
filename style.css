@@ -36,10 +36,18 @@ a {
     cursor: pointer;
     padding: 4px 8px;
     /* Background padding */
-    transition: background-color 0.2s, color 0.3s;
+    transition: background-color 0.2s, color 0.3s, box-shadow 0.2s;
     position: relative;
     /* For z-index if needed */
     z-index: 2;
+}
+
+/* Accessibility: Visible Focus Indicators */
+a:focus-visible,
+button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--bg-color), 0 0 0 4px var(--text-color);
+    z-index: 10;
 }
 
 /* Fixed Wrapper */
