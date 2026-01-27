@@ -26,6 +26,11 @@
     -webkit-font-smoothing: antialiased;
 }
 
+*:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+}
+
 body {
     font-family: var(--font-stack);
     background-color: var(--bg-color);
@@ -347,7 +352,8 @@ body {
     padding: 4px;
 }
 
-.task-row:hover .delete-btn {
+.task-row:hover .delete-btn,
+.delete-btn:focus-visible {
     opacity: 1;
 }
 
