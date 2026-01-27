@@ -101,11 +101,13 @@ function selectElement(selector) {
     console.warn(`Element not found: ${selector}`);
     // Return a dummy object to prevent .value() crashes
     return { 
-      value: () => 0, 
+      value: () => '#000000',
       checked: () => false, 
       input: () => {}, 
       changed: () => {},
-      mouseClicked: () => {} 
+      mouseClicked: () => {},
+      attribute: () => {},
+      style: () => {}
     };
   }
   return el;

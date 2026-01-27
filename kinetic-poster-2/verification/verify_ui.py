@@ -4,25 +4,33 @@ import os
 
 def run():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=True, args=['--use-gl=swiftshader'])
         page = browser.new_page()
         
         # Load the local HTML file
         cwd = os.getcwd()
+        # Ensure we point to index.html in the current directory (kinetic-poster-2)
         page.goto(f"file://{cwd}/index.html")
         
-        # 1. Verify Project Settings Inputs exist
-        print("Checking Project Settings...")
-        page.wait_for_selector("#canvas-width")
-        page.wait_for_selector("#canvas-height")
-        page.wait_for_selector("#apply-size")
+        # 1. Verify Main Title Inputs
+        print("Checking Main Title Inputs...")
+        page.wait_for_selector("#text-line-1")
+        page.wait_for_selector("#text-line-2")
+        page.wait_for_selector("#text-line-3")
         
         # 2. Verify Grain Controls exist
         print("Checking Grain Controls...")
-        # Click the label or slider, not the hidden checkbox
-        # We target the slider span next to the input
+        # Toggle grain section if needed (it might be hidden in details or just collapsed)
+        # In index.html, it's a checkbox #grain-enabled inside .section-header
+        # The content #grain-controls is hidden by default.
+
+        # Click the toggle to reveal controls
+        # The structure is: <label class="toggle-switch"><input type="checkbox" id="grain-enabled"><span class="slider"></span></label>
+        # We click the slider or the input
         page.locator("#grain-enabled + .slider").click()
-            
+
+        # Now wait for grain controls to be visible
+        # Note: The script.js removes 'hidden' class.
         page.wait_for_selector("#grain-amount")
         page.wait_for_selector("#grain-frequency")
         page.wait_for_selector("#grain-blend")

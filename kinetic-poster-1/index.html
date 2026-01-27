@@ -73,12 +73,8 @@
     </div>
 
     <div id="v1" class="content active"></div>
-    <div id="v2" class="content">
-        <h1>Version 2 Content</h1>
-    </div>
-    <div id="v3" class="content">
-        <h1>Version 3 Content</h1>
-    </div>
+    <div id="v2" class="content"></div>
+    <div id="v3" class="content"></div>
 
     <script src="sketch.js"></script>
     <script>
@@ -88,16 +84,24 @@
             let p5Instance = null;
 
             function showTab(targetId) {
+                // Hide all contents
                 contents.forEach(item => item.classList.remove('active'));
+                // Show target content
                 document.getElementById(targetId).classList.add('active');
 
+                // Clean up previous instance
+                if (p5Instance) {
+                    p5Instance.remove();
+                    p5Instance = null;
+                }
+
+                // Instantiate new sketch based on targetId
                 if (targetId === 'v1') {
-                    if (!p5Instance) p5Instance = new p5(sketch, 'v1');
-                } else {
-                    if (p5Instance) {
-                        p5Instance.remove();
-                        p5Instance = null;
-                    }
+                    p5Instance = new p5(sketch1, 'v1');
+                } else if (targetId === 'v2') {
+                    p5Instance = new p5(sketch2, 'v2');
+                } else if (targetId === 'v3') {
+                    p5Instance = new p5(sketch3, 'v3');
                 }
             }
 
@@ -111,6 +115,7 @@
                 });
             });
 
+            // Initial load
             showTab('v1');
         });
     </script>
