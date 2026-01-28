@@ -1,4 +1,4 @@
-const sketch = (p) => {
+const sketch1 = (p) => {
   let fonts = {};
   let fontData = [];
   let textLines = ["Here", "Comes", "The", "Boat"];
@@ -134,6 +134,45 @@ const sketch = (p) => {
     
     p.createDiv('Speed').style('font-size:10px;color:#888;margin-bottom:4px;').parent(animInnerContent);
     p.createSlider(0.01, 0.2, params.speed, 0.01).parent(animInnerContent).input((e) => params.speed = e.target.value);
+
+    // STYLE SECTION
+    let styleContent = p.createDiv().class('control-section').parent(sidebar);
+    p.createDiv('STYLE').class('section-header').parent(styleContent);
+    let styleInner = p.createDiv().class('section-content').parent(styleContent);
+
+    // Gradient
+    let gradDiv = p.createDiv().style('display:flex;align-items:center;gap:8px;').parent(styleInner);
+    let gradCheck = p.createCheckbox('', params.useGradient).parent(gradDiv);
+    gradCheck.changed(() => params.useGradient = gradCheck.checked());
+    p.createSpan('Gradient').style('font-size:12px').parent(gradDiv);
+
+    let colDiv = p.createDiv().style('display:flex;gap:4px').parent(styleInner);
+    p.createColorPicker(params.gradientColor1).parent(colDiv).input((e) => params.gradientColor1 = e.target.value);
+    p.createColorPicker(params.gradientColor2).parent(colDiv).input((e) => params.gradientColor2 = e.target.value);
+
+    // Noise
+    let noiseDiv = p.createDiv().style('display:flex;align-items:center;gap:8px;margin-top:8px').parent(styleInner);
+    let noiseCheck = p.createCheckbox('', params.useNoise).parent(noiseDiv);
+    noiseCheck.changed(() => params.useNoise = noiseCheck.checked());
+    p.createSpan('Noise').style('font-size:12px').parent(noiseDiv);
+
+    p.createSlider(0, 255, params.noiseIntensity, 1).parent(styleInner).input((e) => params.noiseIntensity = e.target.value);
+
+    // EFFECTS SECTION (Echo & Interaction)
+    let fxContent = p.createDiv().class('control-section').parent(sidebar);
+    p.createDiv('EFFECTS').class('section-header').parent(fxContent);
+    let fxInner = p.createDiv().class('section-content').parent(fxContent);
+
+    p.createDiv('Echo Count').style('font-size:10px;color:#888;margin-bottom:4px;').parent(fxInner);
+    p.createSlider(1, 10, params.echoCount, 1).parent(fxInner).input((e) => params.echoCount = e.target.value);
+
+    p.createDiv('Echo Lag').style('font-size:10px;color:#888;margin-bottom:4px;').parent(fxInner);
+    p.createSlider(1, 20, params.echoLag, 1).parent(fxInner).input((e) => params.echoLag = e.target.value);
+
+    let mouseDiv = p.createDiv().style('display:flex;align-items:center;gap:8px;margin-top:8px').parent(fxInner);
+    let mouseCheck = p.createCheckbox('', params.mouseInteraction).parent(mouseDiv);
+    mouseCheck.changed(() => params.mouseInteraction = mouseCheck.checked());
+    p.createSpan('Mouse Interaction').style('font-size:12px').parent(mouseDiv);
   }
 
   function updateGeometry() {
@@ -175,7 +214,7 @@ const sketch = (p) => {
       let x = (p.width / 2) - (b.w / 2);
       let y = startY + i * fontSize;
 
-      let pts = currentFont.textToPoints(str, x, y, fontSize, { sampleFactor: 0.25 });
+      let pts = currentFont.textToPoints(str, x, y, fontSize, { sampleFactor: 0.8 });
 
       let lineContours = [];
       let currentContour = [];
@@ -210,19 +249,78 @@ const sketch = (p) => {
 
   p.draw = () => {
     p.background(params.bgColor);
-    if (fontLoaded) {
-      p.noStroke();
-      for (let i = 0; i < fontData.length; i++) {
+    if (!fontLoaded) return;
+
+    p.noStroke();
+
+    // Setup Gradient if enabled
+    if (params.useGradient) {
+      // Calculate bounds to map gradient
+      let gradient = p.drawingContext.createLinearGradient(0, 0, 0, p.height);
+      gradient.addColorStop(0, params.gradientColor1);
+      gradient.addColorStop(1, params.gradientColor2);
+      p.drawingContext.fillStyle = gradient;
+    } else {
+      p.fill(params.textColor);
+    }
+
+    let loops = params.echoCount;
+    // Limit loops to avoid performance kill
+    if (loops < 1) loops = 1;
+    if (loops > 20) loops = 20;
+
+    for (let k = loops - 1; k >= 0; k--) {
+       // Alpha for echo
+       if (!params.useGradient) {
+         let c = p.color(params.textColor);
+         // Main layer (k=0) is opaque, others transparent
+         let alpha = k === 0 ? 255 : p.map(k, 0, loops, 100, 0);
+         c.setAlpha(alpha);
+         p.fill(c);
+       } else {
+          // If gradient, we can't easily set alpha on the canvas gradient object per draw.
+          // We might need to use globalAlpha
+          p.drawingContext.globalAlpha = k === 0 ? 1.0 : p.map(k, 0, loops, 0.4, 0);
+       }
+
+       let timeOffset = k * params.echoLag;
+
+       for (let i = 0; i < fontData.length; i++) {
         for (let contour of fontData[i]) {
-          p.fill(params.textColor);
           p.beginShape();
           for (let pt of contour) {
-            let wave = p.sin(pt.y * params.freq + p.frameCount * params.speed) * params.amp;
-            p.vertex(pt.x + wave, pt.y);
+            // Wave
+            let wave = p.sin(pt.y * params.freq + (p.frameCount - timeOffset) * params.speed) * params.amp;
+
+            let vx = pt.x + wave;
+            let vy = pt.y;
+
+            // Mouse Interaction
+            if (params.mouseInteraction) {
+                let d = p.dist(vx, vy, p.mouseX, p.mouseY);
+                if (d < params.mouseRadius) {
+                    let angle = p.atan2(vy - p.mouseY, vx - p.mouseX);
+                    let force = p.map(d, 0, params.mouseRadius, 50, 0); // Repel
+                    vx += p.cos(angle) * force;
+                    vy += p.sin(angle) * force;
+                }
+            }
+
+            p.vertex(vx, vy);
           }
           p.endShape(p.CLOSE);
         }
       }
+    }
+    p.drawingContext.globalAlpha = 1.0; // Reset
+
+    // Noise Overlay
+    if (params.useNoise && noiseImage) {
+        p.push();
+        p.blendMode(p.OVERLAY);
+        p.tint(255, params.noiseIntensity); // Alpha controls intensity
+        p.image(noiseImage, 0, 0, p.width, p.height);
+        p.pop();
     }
   }
 

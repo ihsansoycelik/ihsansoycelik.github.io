@@ -1,0 +1,6 @@
+127.0.0.1 - - [28/Jan/2026 02:22:39] "GET /kinetic-poster-1/index.html HTTP/1.1" 200 -
+127.0.0.1 - - [28/Jan/2026 02:22:39] "GET /kinetic-poster-1/sketch1.js HTTP/1.1" 200 -
+127.0.0.1 - - [28/Jan/2026 02:22:39] "GET /kinetic-poster-1/sketch2.js HTTP/1.1" 200 -
+127.0.0.1 - - [28/Jan/2026 02:22:39] "GET /kinetic-poster-1/sketch3.js HTTP/1.1" 200 -
+127.0.0.1 - - [28/Jan/2026 02:22:40] "GET /kinetic-poster-1/assets/Anton-Regular.ttf HTTP/1.1" 200 -
+127.0.0.1 - - [28/Jan/2026 02:22:40] "GET /kinetic-poster-1/assets/RubikMonoOne-Regular.ttf HTTP/1.1" 200 -
