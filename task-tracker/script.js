@@ -111,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
             li.addEventListener('click', () => switchView(list.id));
             els.userLists.appendChild(li);
         });
-    }
 
         // Update Smart Cards Active State
         els.smartCards.forEach(card => {
@@ -137,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const taskRow = document.createElement('div');
             taskRow.className = `task-row ${task.completed ? 'completed' : ''}`;
             taskRow.innerHTML = `
-                <div class="check-circle" role="button"></div>
+                <div class="check-circle" role="checkbox" tabindex="0" aria-label="${task.completed ? 'Mark as incomplete' : 'Mark as complete'}" aria-checked="${task.completed}"></div>
                 <div class="task-content">
                     <input type="text" class="task-text" value="${escapeHtml(task.text)}" readonly>
                     <!-- <div class="task-details">Notes or Date</div> -->
@@ -153,9 +152,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Event Listeners for Task Items
             const check = taskRow.querySelector('.check-circle');
+
+            // Reusable toggle function
+            const handleToggle = () => toggleTask(task.id);
+
             check.addEventListener('click', (e) => {
                 e.stopPropagation();
-                toggleTask(task.id);
+                handleToggle();
+            });
+
+            check.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleToggle();
+                }
             });
 
             const deleteBtn = taskRow.querySelector('.delete-btn');

@@ -290,6 +290,12 @@ body {
     border-color: #999;
 }
 
+.check-circle:focus-visible {
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3);
+    outline: none;
+}
+
 .task-row.completed .check-circle {
     background-color: var(--color-blue);
     border-color: var(--color-blue);
