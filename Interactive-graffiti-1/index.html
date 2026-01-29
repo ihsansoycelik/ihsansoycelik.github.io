@@ -28,6 +28,7 @@
       <div class="section">
         <div class="section-header">CONTENT</div>
         <div class="control-group">
+          <input type="text" id="title-input" value="NIGHT BOAT TO CAIRO BY MADNESS." placeholder="Title Text" style="width: 100%; margin-bottom: 10px; padding: 5px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
           <textarea id="text-content" rows="4">Here
 Comes
 The
@@ -71,6 +72,14 @@ Boat</textarea>
       <div class="section">
         <div class="section-header">ANIMATION</div>
         <div class="control-group">
+          <label>MODE</label>
+          <select id="anim-mode">
+            <option value="wave">Wave</option>
+            <option value="shake">Shake</option>
+            <option value="elastic">Elastic</option>
+          </select>
+        </div>
+        <div class="control-group">
           <label>FREQUENCY</label>
           <input type="range" id="anim-freq" min="0" max="1" step="0.01" value="0.2">
         </div>
@@ -105,6 +114,14 @@ Boat</textarea>
       <div class="section">
         <div class="section-header">BRUSH SETTINGS</div>
         <div class="control-group">
+          <label>TOOL</label>
+          <select id="tool-select">
+            <option value="marker">Marker</option>
+            <option value="spray">Spray</option>
+            <option value="eraser">Eraser</option>
+          </select>
+        </div>
+        <div class="control-group">
           <label>SIZE</label>
           <input type="range" id="brush-size" min="5" max="100" value="25">
         </div>
@@ -113,7 +130,9 @@ Boat</textarea>
           <input type="range" id="drip-speed" min="0.1" max="3.0" step="0.1" value="1.0">
         </div>
         <div class="control-group">
+           <button id="btn-undo" class="full-width-btn" style="margin-bottom: 5px;">Undo</button>
            <button id="btn-clear" class="full-width-btn">Clear Canvas</button>
+           <button id="btn-download" class="full-width-btn" style="margin-top: 5px;">Download</button>
         </div>
       </div>
     </div>
