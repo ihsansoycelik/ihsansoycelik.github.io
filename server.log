@@ -1,0 +1,6 @@
+127.0.0.1 - - [29/Jan/2026 02:27:30] "GET /Interactive-graffiti-1/index.html HTTP/1.1" 200 -
+127.0.0.1 - - [29/Jan/2026 02:27:30] "GET /Interactive-graffiti-1/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [29/Jan/2026 02:27:30] "GET /Interactive-graffiti-1/sketch.js HTTP/1.1" 200 -
+127.0.0.1 - - [29/Jan/2026 02:30:36] "GET /Interactive-graffiti-1/index.html HTTP/1.1" 200 -
+127.0.0.1 - - [29/Jan/2026 02:30:36] "GET /Interactive-graffiti-1/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [29/Jan/2026 02:30:36] "GET /Interactive-graffiti-1/sketch.js HTTP/1.1" 200 -

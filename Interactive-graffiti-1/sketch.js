@@ -1,10 +1,10 @@
 // Global variables
 let pg; // Off-screen graphics buffer
-let markers = []; // Array to store stroke points if needed, but we draw directly to pg
 let uiFont;
 
 // UI State Variables
 let contentText = "Here\nComes\nThe\nBoat";
+let titleText = "NIGHT BOAT TO CAIRO BY MADNESS.";
 let selectedFont = "Inter";
 let bgColor;
 let bgImage; 
@@ -12,10 +12,18 @@ let textColor;
 let animFreq = 0.2;
 let animAmp = 20;
 let animSpeed = 1.0;
+let animMode = 'wave';
 let brushSize = 25;
-let dripSpeed = 1.0; // Still used for ink flow feeling? Maybe not for marker.
+let dripSpeed = 1.0;
 let gradientEnabled = false;
 let currentGradient = 'neon';
+
+// New features
+let drips = [];
+let history = [];
+let currentTool = 'marker'; // marker, spray, eraser
+let sprayDensity = 20;
+let sprayRadius = 30;
 
 // Gradient Palettes
 const GRADIENTS = {
@@ -24,6 +32,33 @@ const GRADIENTS = {
   ocean: ['#0000FF', '#0099FF', '#00FFFF'],
   bw: ['#000000', '#888888', '#FFFFFF']
 };
+
+class Drip {
+  constructor(x, y, color, size, speed) {
+    this.x = x;
+    this.y = y;
+    this.color = color;
+    this.size = size;
+    this.speed = speed * random(0.5, 1.5);
+    this.life = random(100, 300); // Length of drip
+  }
+
+  update() {
+    this.y += this.speed;
+    this.life -= this.speed;
+    this.size *= 0.99; // Taper off
+  }
+
+  draw(graphics) {
+    graphics.noStroke();
+    graphics.fill(this.color);
+    graphics.ellipse(this.x, this.y, this.size, this.size);
+  }
+
+  isDead() {
+    return this.life <= 0 || this.size < 1;
+  }
+}
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -56,6 +91,7 @@ function setupUI() {
   });
 
   bind('text-content', 'input', (e) => contentText = e.target.value);
+  bind('title-input', 'input', (e) => titleText = e.target.value);
   bind('font-select', 'change', (e) => selectedFont = e.target.value);
 
   bind('bg-color-picker', 'input', (e) => {
@@ -80,6 +116,7 @@ function setupUI() {
   bind('anim-freq', 'input', (e) => animFreq = parseFloat(e.target.value));
   bind('anim-amp', 'input', (e) => animAmp = parseFloat(e.target.value));
   bind('anim-speed', 'input', (e) => animSpeed = parseFloat(e.target.value));
+  bind('anim-mode', 'change', (e) => animMode = e.target.value);
 
   bind('gradient-toggle', 'change', (e) => {
     gradientEnabled = e.target.checked;
@@ -90,10 +127,36 @@ function setupUI() {
 
   bind('gradient-select', 'change', (e) => currentGradient = e.target.value);
   bind('brush-size', 'input', (e) => brushSize = parseFloat(e.target.value));
+  bind('drip-speed', 'input', (e) => dripSpeed = parseFloat(e.target.value));
+  bind('tool-select', 'change', (e) => currentTool = e.target.value);
+
+  bind('btn-undo', 'click', undo);
+  bind('btn-download', 'click', () => saveCanvas('graffiti', 'png'));
   
   bind('btn-clear', 'click', () => {
     pg.clear();
+    drips = [];
   });
+}
+
+function saveState() {
+  if (history.length > 10) {
+    history.shift();
+  }
+  history.push(pg.get());
+}
+
+function undo() {
+  if (history.length > 0) {
+    let previousState = history.pop();
+    pg.clear();
+    pg.image(previousState, 0, 0);
+  }
+}
+
+function mousePressed(e) {
+  if (e && e.target && (e.target.closest('#sidebar') || e.target.closest('#sidebar-toggle'))) return;
+  saveState();
 }
 
 function draw() {
@@ -107,6 +170,17 @@ function draw() {
     image(bgImage, (width - w) / 2, (height - h) / 2, w, h);
   }
   
+  // Update and draw drips to PG
+  // We draw drips to PG so they become permanent part of drawing
+  for (let i = drips.length - 1; i >= 0; i--) {
+    let d = drips[i];
+    d.update();
+    d.draw(pg);
+    if (d.isDead()) {
+      drips.splice(i, 1);
+    }
+  }
+
   // Draw the drawing layer
   image(pg, 0, 0);
   
@@ -117,58 +191,79 @@ function draw() {
   drawStaticOverlays();
 }
 
-function mouseDragged(e) {
-  if (e && e.target && (e.target.closest('#sidebar') || e.target.closest('#sidebar-toggle'))) return;
-
-  // 1. Determine Color
-  let drawColor;
+function getCurrentColor() {
   if (gradientEnabled) {
     let palette = GRADIENTS[currentGradient];
     let t = map(mouseY, 0, height, 0, palette.length - 1);
     let i1 = floor(t);
     let i2 = ceil(t);
     if (i2 >= palette.length) { i1 = palette.length - 1; i2 = palette.length - 1; }
-    drawColor = lerpColor(color(palette[i1]), color(palette[i2]), t - i1);
+    return lerpColor(color(palette[i1]), color(palette[i2]), t - i1);
   } else {
-    drawColor = color(textColor);
+    return color(textColor);
   }
+}
 
-  // 2. Calculate Dynamics
+function mouseDragged(e) {
+  if (e && e.target && (e.target.closest('#sidebar') || e.target.closest('#sidebar-toggle'))) return;
+  if (!mouseIsPressed) return; // Extra safety
+
+  let drawColor = getCurrentColor();
   let d = dist(mouseX, mouseY, pmouseX, pmouseY);
   let speed = constrain(d, 0, 50);
-  
-  // Marker Logic: Faster = Thinner, Slower = Thicker (and slightly darker due to overlap)
-  // Base width varies by speed
-  let dynamicWidth = map(speed, 0, 50, brushSize * 1.2, brushSize * 0.4);
-  
-  // 3. Draw to PG (Buffer)
+
   pg.noStroke();
-  
-  // Interpolate between previous mouse pos and current to avoid gaps
-  let steps = max(1, d / 2); // Step every 2 pixels roughly
-  
-  for (let i = 0; i < steps; i++) {
-    let t = i / steps;
-    let x = lerp(pmouseX, mouseX, t);
-    let y = lerp(pmouseY, mouseY, t);
+
+  if (currentTool === 'marker') {
+    let dynamicWidth = map(speed, 0, 50, brushSize * 1.2, brushSize * 0.4);
+    let steps = max(1, d / 2);
     
-    // Slight size jitter for "felt tip" texture
-    let w = dynamicWidth * random(0.9, 1.1);
-    
-    // Alpha is low to simulate ink buildup
-    // Darker colors need lower alpha to not become black instantly
-    drawColor.setAlpha(map(speed, 0, 50, 40, 20)); // Faster = less ink deposit
-    
+    // Alpha adjustment for marker feel
+    let alphaVal = map(speed, 0, 50, 40, 20);
+    drawColor.setAlpha(alphaVal);
+    pg.fill(drawColor);
+
+    for (let i = 0; i < steps; i++) {
+      let t = i / steps;
+      let x = lerp(pmouseX, mouseX, t);
+      let y = lerp(pmouseY, mouseY, t);
+      let w = dynamicWidth * random(0.9, 1.1);
+      pg.ellipse(x, y, w, w);
+    }
+
+    // Spawn Drips based on Flow (dripSpeed) and inverse speed (slower = more ink = more drips)
+    // Probability
+    if (random(1) < (0.05 * dripSpeed) / (speed * 0.1 + 1)) {
+        drips.push(new Drip(mouseX, mouseY, color(drawColor.levels[0], drawColor.levels[1], drawColor.levels[2], 200), dynamicWidth * 0.5, dripSpeed));
+    }
+
+  } else if (currentTool === 'spray') {
+    // Spray Logic
+    let density = sprayDensity * (brushSize / 20); // More particles for bigger brush
+    drawColor.setAlpha(150); // Higher alpha for spray dots
     pg.fill(drawColor);
     
-    // Draw a "chisel" shape or just a circle.
-    // Let's use a circle for a round tip marker, but rotate it slightly or deform it for realism?
-    // Simple circle with low alpha works surprisingly well for markers.
-    pg.ellipse(x, y, w, w);
-    
-    // Optional: Add a "core" that is slightly smaller and darker for the wet center
-    // pg.fill(red(drawColor), green(drawColor), blue(drawColor), 5);
-    // pg.ellipse(x, y, w * 0.7, w * 0.7);
+    for (let i = 0; i < density; i++) {
+        let angle = random(TWO_PI);
+        let rad = random(brushSize); // Random radius within brush size
+        // Biased towards center for soft brush feel
+        rad = pow(random(), 2) * brushSize * 1.5;
+
+        let offsetX = cos(angle) * rad;
+        let offsetY = sin(angle) * rad;
+
+        pg.ellipse(mouseX + offsetX, mouseY + offsetY, 2, 2);
+    }
+     // Spray drips less than marker? Or maybe accumulates.
+     if (random(1) < (0.02 * dripSpeed)) {
+        drips.push(new Drip(mouseX, mouseY, color(drawColor.levels[0], drawColor.levels[1], drawColor.levels[2], 200), brushSize * 0.2, dripSpeed));
+    }
+  } else if (currentTool === 'eraser') {
+    pg.erase();
+    pg.noStroke();
+    pg.fill(0);
+    pg.ellipse(mouseX, mouseY, brushSize, brushSize);
+    pg.noErase();
   }
 }
 
@@ -194,8 +289,18 @@ function drawKineticText() {
   for (let i = 0; i < fullText.length; i++) {
     let char = fullText.charAt(i);
     let cw = textWidth(char);
-    let wave = sin(frameCount * 0.05 * animSpeed + i * animFreq) * animAmp;
-    text(char, currentX + cw/2, -10 + wave);
+    let offsetY = 0;
+
+    if (animMode === 'wave') {
+      offsetY = sin(frameCount * 0.05 * animSpeed + i * animFreq) * animAmp;
+    } else if (animMode === 'shake') {
+       offsetY = random(-animAmp, animAmp) * 0.5;
+    } else if (animMode === 'elastic') {
+       let t = frameCount * 0.05 * animSpeed + i * animFreq;
+       offsetY = -abs(sin(t)) * animAmp;
+    }
+
+    text(char, currentX + cw/2, -10 + offsetY);
     currentX += cw;
   }
   pop();
@@ -209,7 +314,7 @@ function drawStaticOverlays() {
   textSize(12);
 
   textAlign(LEFT, TOP);
-  text("NIGHT BOAT TO CAIRO BY MADNESS.", 20, 20);
+  text(titleText.toUpperCase(), 20, 20);
 
   textAlign(LEFT, BOTTOM);
   text("@holke79", 20, height - 20);
