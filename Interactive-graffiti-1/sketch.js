@@ -167,8 +167,8 @@ function mouseDragged(e) {
     pg.ellipse(x, y, w, w);
     
     // Optional: Add a "core" that is slightly smaller and darker for the wet center
-    // pg.fill(red(drawColor), green(drawColor), blue(drawColor), 5);
-    // pg.ellipse(x, y, w * 0.7, w * 0.7);
+    pg.fill(red(drawColor), green(drawColor), blue(drawColor), 5);
+    pg.ellipse(x, y, w * 0.7, w * 0.7);
   }
 }
 
