@@ -537,3 +537,20 @@ body {
 .new-task-input input::placeholder {
     color: var(--text-secondary);
 }
+
+/* Accessibility & Focus */
+.smart-card:focus-visible,
+.list-row:focus-visible,
+.check-circle:focus-visible,
+button:focus-visible,
+input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--main-bg), 0 0 0 4px var(--color-blue);
+    z-index: 10;
+    position: relative; /* Ensure z-index works */
+}
+
+/* Ensure delete button is visible on focus */
+.delete-btn:focus-visible {
+    opacity: 1;
+}

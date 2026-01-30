@@ -1,0 +1,3 @@
+## 2024-05-22 - Task Tracker Accessibility Pattern
+**Learning:** The 'Task Tracker' project implemented interactive components (cards, lists, checkboxes) using `div` and `li` elements without any semantic roles or keyboard support. This renders the application completely unusable for keyboard and screen reader users.
+**Action:** When identifying custom interactive components, assume they lack native accessibility features. Always verify `tabindex`, `role`, `aria-label`, and `keydown` support. Use a reusable helper function to consistently bind keyboard events (Enter/Space) alongside click events for these "fake" buttons.

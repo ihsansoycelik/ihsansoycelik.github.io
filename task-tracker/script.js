@@ -31,6 +31,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Core Logic ---
 
+    // Accessibility Helper
+    function addAccessibleClickListener(element, callback) {
+        element.addEventListener('click', callback);
+        element.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                callback(e);
+            }
+        });
+    }
+
     function init() {
         renderSidebar();
         renderMainView();
@@ -108,17 +119,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="list-count">${count || ''}</span>
             `;
 
-            li.addEventListener('click', () => switchView(list.id));
+            li.setAttribute('tabindex', '0');
+            li.setAttribute('role', 'button');
+            li.setAttribute('aria-label', `Show ${list.name} tasks`);
+
+            addAccessibleClickListener(li, () => switchView(list.id));
             els.userLists.appendChild(li);
         });
-    }
 
         // Update Smart Cards Active State
         els.smartCards.forEach(card => {
             if (card.dataset.list === state.currentView) {
                 card.classList.add('active');
+                card.setAttribute('aria-current', 'true');
             } else {
                 card.classList.remove('active');
+                card.removeAttribute('aria-current');
             }
         });
     }
@@ -153,7 +169,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Event Listeners for Task Items
             const check = taskRow.querySelector('.check-circle');
-            check.addEventListener('click', (e) => {
+
+            check.setAttribute('tabindex', '0');
+            check.setAttribute('role', 'checkbox');
+            check.setAttribute('aria-checked', task.completed);
+            check.setAttribute('aria-label', `Mark "${task.text}" as ${task.completed ? 'incomplete' : 'complete'}`);
+
+            addAccessibleClickListener(check, (e) => {
                 e.stopPropagation();
                 toggleTask(task.id);
             });
@@ -213,7 +235,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupEventListeners() {
         // Smart Cards
         els.smartCards.forEach(card => {
-            card.addEventListener('click', () => switchView(card.dataset.list));
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('role', 'button');
+
+            const labelEl = card.querySelector('.label');
+            if (labelEl) {
+                card.setAttribute('aria-label', `Show ${labelEl.textContent} tasks`);
+            }
+
+            addAccessibleClickListener(card, () => switchView(card.dataset.list));
         });
 
         // New Task Interaction
