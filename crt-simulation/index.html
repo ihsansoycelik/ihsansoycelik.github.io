@@ -17,9 +17,9 @@
         </div>
 
         <div class="panel-content">
-            <!-- Content Section -->
+            <!-- Signal Source Section -->
             <div class="control-group">
-                <h3>Content</h3>
+                <h3>Signal Source</h3>
                 <div class="input-row">
                     <input type="text" id="TextInput" value="SYSTEM MALFUNCTION // SIGNAL LOST // RETRYING..." placeholder="Enter text...">
                 </div>
@@ -50,23 +50,34 @@
                 </div>
             </div>
 
-            <!-- Interference Section -->
+            <!-- Signal Interference Section -->
             <div class="control-group">
-                <h3>Interference (Magnet)</h3>
+                <h3>Signal Interference</h3>
                 <div class="input-row">
-                    <label>Strength</label>
+                    <label>Glitch</label>
+                    <input type="range" id="GlitchIntensity" min="0" max="1" step="0.01" value="0.1">
+                </div>
+                <div class="input-row">
+                    <label>V-Sync</label>
+                    <input type="range" id="RefreshRate" min="0" max="1" step="0.01" value="0.1">
+                </div>
+                <div class="input-row">
+                    <label>Mag Str</label>
                     <input type="range" id="MagStrength" min="0" max="1" step="0.01" value="0.3">
                 </div>
                 <div class="input-row">
-                    <label>Radius</label>
+                    <label>Mag Rad</label>
                     <input type="range" id="MagRadius" min="0.0" max="1.0" step="0.01" value="0.25">
+                </div>
+                <div class="button-row">
+                    <button id="BtnResetMagnet">Reset Magnet</button>
                 </div>
                 <div class="info-text">Drag on screen to move interference</div>
             </div>
 
-            <!-- CRT Effects Section -->
+            <!-- Monitor Hardware Section -->
             <div class="control-group">
-                <h3>CRT Params</h3>
+                <h3>Monitor Hardware</h3>
                 <div class="input-row">
                     <label>Curvature</label>
                     <input type="range" id="CrtCurve" min="0" max="1" step="0.01" value="0.15">
@@ -86,6 +97,10 @@
                 <div class="input-row">
                     <label>Aberration</label>
                     <input type="range" id="CrtAberration" min="0" max="5" step="0.1" value="1.5">
+                </div>
+                <div class="input-row">
+                    <label>Shadow Mask</label>
+                    <input type="range" id="CrtShadowMask" min="0" max="1" step="0.01" value="0.5">
                 </div>
                 <div class="input-row">
                     <label>Vignette</label>
