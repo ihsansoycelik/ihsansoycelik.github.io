@@ -1,6 +1,7 @@
 // Global variables
 let pg; // Off-screen graphics buffer
 let markers = []; // Array to store stroke points if needed, but we draw directly to pg
+let drips = [];
 let uiFont;
 
 // UI State Variables
@@ -109,6 +110,16 @@ function draw() {
   
   // Draw the drawing layer
   image(pg, 0, 0);
+
+  // Update and draw drips
+  for (let i = drips.length - 1; i >= 0; i--) {
+    let d = drips[i];
+    d.update();
+    d.show(pg); // Draw directly to buffer
+    if (d.isDone()) {
+      drips.splice(i, 1);
+    }
+  }
   
   // Draw Kinetic Text (Sidebar Decoration)
   drawKineticText();
@@ -169,6 +180,11 @@ function mouseDragged(e) {
     // Optional: Add a "core" that is slightly smaller and darker for the wet center
     // pg.fill(red(drawColor), green(drawColor), blue(drawColor), 5);
     // pg.ellipse(x, y, w * 0.7, w * 0.7);
+
+    // Spawn Drips
+    if (random() < 0.05 * dripSpeed) { // Low chance per step
+       drips.push(new Drip(x, y, drawColor, w * 0.8));
+    }
   }
 }
 
@@ -239,3 +255,32 @@ function windowResized() {
 }
 
 document.oncontextmenu = function() { return false; }
+
+class Drip {
+  constructor(x, y, c, w) {
+    this.x = x;
+    this.y = y;
+    this.c = color(c);
+    this.w = w;
+    this.life = random(50, 150);
+    this.speed = random(0.5, 2);
+  }
+
+  update() {
+    this.y += this.speed;
+    this.life--;
+    this.w *= 0.99; // Shrink slightly
+  }
+
+  show(buffer) {
+    buffer.noStroke();
+    // High alpha for drip head
+    this.c.setAlpha(150);
+    buffer.fill(this.c);
+    buffer.ellipse(this.x, this.y, this.w, this.w);
+  }
+
+  isDone() {
+    return this.life < 0 || this.w < 1;
+  }
+}
