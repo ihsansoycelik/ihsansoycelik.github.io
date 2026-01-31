@@ -22,8 +22,14 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    outline: none;
+    /* outline: none; REMOVED for a11y */
     -webkit-font-smoothing: antialiased;
+}
+
+/* Global focus style for accessibility */
+*:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
 }
 
 body {
@@ -290,6 +296,12 @@ body {
     border-color: #999;
 }
 
+.check-circle:focus-visible {
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3);
+    outline: none;
+}
+
 .task-row.completed .check-circle {
     background-color: var(--color-blue);
     border-color: var(--color-blue);
@@ -347,11 +359,13 @@ body {
     padding: 4px;
 }
 
-.task-row:hover .delete-btn {
+.task-row:hover .delete-btn,
+.delete-btn:focus-visible {
     opacity: 1;
 }
 
-.delete-btn:hover {
+.delete-btn:hover,
+.delete-btn:focus-visible {
     color: var(--color-red);
 }
 

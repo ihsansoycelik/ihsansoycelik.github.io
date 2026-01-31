@@ -1,0 +1,3 @@
+## 2026-01-31 - Keyboard Accessibility Restoration
+**Learning:** The project used `* { outline: none; }` globally to remove default browser focus rings, likely for aesthetic reasons. However, this completely broke keyboard navigation as users could not see which element was focused.
+**Action:** When encountering `outline: none`, immediately check if custom focus styles are defined. If not, restore them using `:focus-visible` to ensure accessibility without affecting mouse users' aesthetic experience. Additionally, ensure interactive elements (like custom checkboxes) have `tabindex="0"`, `role`, and proper `keydown` handlers.
