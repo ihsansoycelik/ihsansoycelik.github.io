@@ -175,7 +175,7 @@ const sketch = (p) => {
       let x = (p.width / 2) - (b.w / 2);
       let y = startY + i * fontSize;
 
-      let pts = currentFont.textToPoints(str, x, y, fontSize, { sampleFactor: 0.25 });
+      let pts = currentFont.textToPoints(str, x, y, fontSize, { sampleFactor: 0.8 });
 
       let lineContours = [];
       let currentContour = [];
@@ -212,16 +212,51 @@ const sketch = (p) => {
     p.background(params.bgColor);
     if (fontLoaded) {
       p.noStroke();
-      for (let i = 0; i < fontData.length; i++) {
-        for (let contour of fontData[i]) {
-          p.fill(params.textColor);
-          p.beginShape();
-          for (let pt of contour) {
-            let wave = p.sin(pt.y * params.freq + p.frameCount * params.speed) * params.amp;
-            p.vertex(pt.x + wave, pt.y);
-          }
-          p.endShape(p.CLOSE);
+
+      for (let k = params.echoCount; k >= 0; k--) {
+        let alpha = 255;
+        if (k > 0) {
+          alpha = p.map(k, 0, params.echoCount, 150, 10);
         }
+
+        let c = p.color(params.textColor);
+        c.setAlpha(alpha);
+        p.fill(c);
+
+        let timeOffset = k * params.echoLag;
+        let time = p.frameCount - timeOffset;
+
+        for (let i = 0; i < fontData.length; i++) {
+          for (let contour of fontData[i]) {
+            p.beginShape();
+            for (let pt of contour) {
+              let wave = p.sin(pt.y * params.freq + time * params.speed) * params.amp;
+
+              let px = pt.x + wave;
+              let py = pt.y;
+
+              if (params.mouseInteraction) {
+                let d = p.dist(px, py, p.mouseX, p.mouseY);
+                if (d < params.mouseRadius) {
+                  let angle = p.atan2(py - p.mouseY, px - p.mouseX);
+                  let push = p.map(d, 0, params.mouseRadius, 60, 0);
+                  px += p.cos(angle) * push;
+                  py += p.sin(angle) * push;
+                }
+              }
+
+              p.vertex(px, py);
+            }
+            p.endShape(p.CLOSE);
+          }
+        }
+      }
+
+      if (params.useNoise && noiseImage) {
+        p.push();
+        p.blendMode(p.OVERLAY);
+        p.image(noiseImage, 0, 0, p.width, p.height);
+        p.pop();
       }
     }
   }
