@@ -1,4 +1,4 @@
-const sketch = (p) => {
+const sketch1 = (p) => {
   let fonts = {};
   let fontData = [];
   let textLines = ["Here", "Comes", "The", "Boat"];
@@ -212,15 +212,25 @@ const sketch = (p) => {
     p.background(params.bgColor);
     if (fontLoaded) {
       p.noStroke();
-      for (let i = 0; i < fontData.length; i++) {
-        for (let contour of fontData[i]) {
-          p.fill(params.textColor);
-          p.beginShape();
-          for (let pt of contour) {
-            let wave = p.sin(pt.y * params.freq + p.frameCount * params.speed) * params.amp;
-            p.vertex(pt.x + wave, pt.y);
+
+      // Echo Loop: Draw from back (oldest) to front (newest)
+      for (let k = params.echoCount - 1; k >= 0; k--) {
+        let alpha = p.map(k, 0, params.echoCount, 255, 0);
+        let col = p.color(params.textColor);
+        col.setAlpha(alpha);
+        p.fill(col);
+
+        let timeOffset = -k * params.echoLag;
+
+        for (let i = 0; i < fontData.length; i++) {
+          for (let contour of fontData[i]) {
+            p.beginShape();
+            for (let pt of contour) {
+              let wave = p.sin(pt.y * params.freq + (p.frameCount + timeOffset) * params.speed) * params.amp;
+              p.vertex(pt.x + wave, pt.y);
+            }
+            p.endShape(p.CLOSE);
           }
-          p.endShape(p.CLOSE);
         }
       }
     }
