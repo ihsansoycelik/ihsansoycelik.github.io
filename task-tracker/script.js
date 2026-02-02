@@ -111,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
             li.addEventListener('click', () => switchView(list.id));
             els.userLists.appendChild(li);
         });
-    }
 
         // Update Smart Cards Active State
         els.smartCards.forEach(card => {
@@ -136,8 +135,12 @@ document.addEventListener('DOMContentLoaded', () => {
         tasks.forEach(task => {
             const taskRow = document.createElement('div');
             taskRow.className = `task-row ${task.completed ? 'completed' : ''}`;
+            // Ensure quotes are escaped for the attribute
+            const safeText = escapeHtml(task.text).replace(/"/g, '&quot;');
+            const labelText = task.completed ? `Mark "${safeText}" as incomplete` : `Mark "${safeText}" as complete`;
+
             taskRow.innerHTML = `
-                <div class="check-circle" role="button"></div>
+                <div class="check-circle" role="checkbox" tabindex="0" aria-checked="${task.completed}" aria-label="${labelText}"></div>
                 <div class="task-content">
                     <input type="text" class="task-text" value="${escapeHtml(task.text)}" readonly>
                     <!-- <div class="task-details">Notes or Date</div> -->
@@ -156,6 +159,14 @@ document.addEventListener('DOMContentLoaded', () => {
             check.addEventListener('click', (e) => {
                 e.stopPropagation();
                 toggleTask(task.id);
+            });
+
+            check.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleTask(task.id);
+                }
             });
 
             const deleteBtn = taskRow.querySelector('.delete-btn');
