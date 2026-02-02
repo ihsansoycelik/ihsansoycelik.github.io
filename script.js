@@ -30,6 +30,16 @@ document.addEventListener('DOMContentLoaded', () => {
             author: "Me",
             tech: "p5.js",
             backgroundColor: "#0022AA"
+        },
+        {
+            title: "Dither Lab",
+            tag: "Noise",
+            category: "Tools",
+            url: "dither-lab/index.html",
+            date: "2023-10-27",
+            author: "Me",
+            tech: "WebGL",
+            backgroundColor: "#222222"
         }
     ];
 

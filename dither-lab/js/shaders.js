@@ -85,6 +85,19 @@ export function getShaders() {
                     float noise = texture2D(u_blueNoise, noiseCoord).r;
                     float ditherOffset = (noise - 0.5) * u_ditherAmount;
                     color += ditherOffset;
+                } else if (u_algorithm == 4) {
+                    // Halftone (Sine Wave approximation)
+                    vec2 pixelCoord = v_texCoord * u_resolution;
+                    float angle = 0.785398; // 45 degrees
+                    mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+                    vec2 rotated = rot * pixelCoord;
+
+                    float frequency = 6.0;
+                    vec2 uv = rotated * (3.14159 * 2.0 / frequency);
+                    float wave = (sin(uv.x) * sin(uv.y)) * 0.5 + 0.5;
+
+                    float ditherOffset = (wave - 0.5) * u_ditherAmount;
+                    color += ditherOffset;
                 }
 
                 color = clamp(color, 0.0, 1.0);
