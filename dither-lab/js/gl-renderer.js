@@ -10,11 +10,6 @@ let blueNoiseTexture;
 let buffers = {};
 let uniforms = {};
 
-const BAYER_MATRICES = {
-    2: [0, 2, 3, 1],
-    4: [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
-};
-
 const CLUSTER_MATRICES = {
     4: [12, 5, 6, 13, 4, 0, 1, 7, 11, 3, 2, 8, 15, 10, 9, 14],
     8: [
@@ -29,22 +24,29 @@ const CLUSTER_MATRICES = {
     ]
 };
 
-function generateBayer(size) {
-    if (size === 2) return new Uint8Array(BAYER_MATRICES[2].map(x => x * 64));
-    if (size === 4) return new Uint8Array(BAYER_MATRICES[4].map(x => x * 16));
+function createBayer(n) {
+    if (n <= 2) return [0, 2, 3, 1];
 
-    // 8x8 Standard Bayer
-    const m8 = [
-        0, 32, 8, 40, 2, 34, 10, 42,
-        48, 16, 56, 24, 50, 18, 58, 26,
-        12, 44, 4, 36, 14, 46, 6, 38,
-        60, 28, 52, 20, 62, 30, 54, 22,
-        3, 35, 11, 43, 1, 33, 9, 41,
-        51, 19, 59, 27, 49, 17, 57, 25,
-        15, 47, 7, 39, 13, 45, 5, 37,
-        63, 31, 55, 23, 61, 29, 53, 21
-    ];
-    return new Uint8Array(m8.map(x => x * 4));
+    const prev = createBayer(n / 2);
+    const size = n / 2;
+    const curr = new Array(n * n);
+
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            const val = prev[y * size + x];
+            curr[y * n + x] = 4 * val;
+            curr[y * n + (x + size)] = 4 * val + 2;
+            curr[(y + size) * n + x] = 4 * val + 3;
+            curr[(y + size) * n + (x + size)] = 4 * val + 1;
+        }
+    }
+    return curr;
+}
+
+function generateBayer(size) {
+    const data = createBayer(size);
+    const factor = 256 / (size * size);
+    return new Uint8Array(data.map(x => Math.floor(x * factor)));
 }
 
 function generateCluster(size) {
@@ -233,6 +235,8 @@ export function render(state, bypassShader = false) {
             algoId = 3;
         } else if (algo === 'white-noise') {
             algoId = 2;
+        } else if (algo === 'halftone') {
+            algoId = 4;
         }
     }
 
