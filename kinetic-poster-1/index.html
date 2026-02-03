@@ -80,7 +80,9 @@
         <h1>Version 3 Content</h1>
     </div>
 
-    <script src="sketch.js"></script>
+    <script src="sketch1.js"></script>
+    <script src="sketch2.js"></script>
+    <script src="sketch3.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const tabs = document.querySelectorAll('.notch a');
@@ -88,16 +90,21 @@
             let p5Instance = null;
 
             function showTab(targetId) {
+                // Cleanup previous instance
+                if (p5Instance) {
+                    p5Instance.remove();
+                    p5Instance = null;
+                }
+
                 contents.forEach(item => item.classList.remove('active'));
                 document.getElementById(targetId).classList.add('active');
 
                 if (targetId === 'v1') {
-                    if (!p5Instance) p5Instance = new p5(sketch, 'v1');
-                } else {
-                    if (p5Instance) {
-                        p5Instance.remove();
-                        p5Instance = null;
-                    }
+                    p5Instance = new p5(sketch1, 'v1');
+                } else if (targetId === 'v2') {
+                    p5Instance = new p5(sketch2, 'v2');
+                } else if (targetId === 'v3') {
+                    p5Instance = new p5(sketch3, 'v3');
                 }
             }
 
