@@ -107,6 +107,11 @@ body {
     background-color: #e5e5ea;
 }
 
+.smart-card:focus-visible {
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3);
+    z-index: 1;
+}
+
 .smart-card.active {
     background-color: #3a3a3c;
     color: white;
@@ -176,6 +181,11 @@ body {
 
 .list-row:hover {
     background-color: rgba(0,0,0,0.05);
+}
+
+.list-row:focus-visible {
+    background-color: rgba(0,0,0,0.05);
+    box-shadow: 0 0 0 2px var(--color-blue) inset;
 }
 
 .list-row.active {
@@ -290,6 +300,11 @@ body {
     border-color: #999;
 }
 
+.check-circle:focus-visible {
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3);
+}
+
 .task-row.completed .check-circle {
     background-color: var(--color-blue);
     border-color: var(--color-blue);
@@ -347,12 +362,20 @@ body {
     padding: 4px;
 }
 
-.task-row:hover .delete-btn {
+.task-row:hover .delete-btn,
+.delete-btn:focus-visible {
     opacity: 1;
 }
 
 .delete-btn:hover {
     color: var(--color-red);
+}
+
+.delete-btn:focus-visible {
+    opacity: 1;
+    color: var(--color-red);
+    background-color: rgba(255, 59, 48, 0.1);
+    border-radius: 4px;
 }
 
 /* New Task Input Area */
