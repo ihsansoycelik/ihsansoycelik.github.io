@@ -13,6 +13,7 @@ const sketch2 = (p) => {
     container.innerHTML = ''; // Clear placeholder
     let cnv = p.createCanvas(p.windowWidth, p.windowHeight);
     cnv.parent(container);
+    p.colorMode(p.HSB, 360, 100, 100, 100);
 
     p.textFont(font);
     p.textSize(fontSize);
@@ -31,8 +32,9 @@ const sketch2 = (p) => {
     let startX = (p.width - bounds.w) / 2;
     let startY = (p.height + bounds.h) / 2;
 
+    // Increased sampleFactor for higher fidelity (was 0.2)
     let points = font.textToPoints(txt, startX, startY, fontSize, {
-      sampleFactor: 0.2
+      sampleFactor: 0.6
     });
 
     for (let pt of points) {
@@ -56,9 +58,10 @@ const sketch2 = (p) => {
       this.target = p.createVector(x, y);
       this.vel = p.createVector(p.random(-1, 1), p.random(-1, 1));
       this.acc = p.createVector();
-      this.r = 5;
+      this.r = 4;
       this.maxspeed = 10;
       this.maxforce = 1;
+      this.hue = p.random(180, 240); // Base hue (Blue-ish)
     }
 
     behaviors() {
@@ -85,31 +88,45 @@ const sketch2 = (p) => {
     }
 
     show() {
-      p.stroke(255);
+      // Dynamic color based on speed
+      let speed = this.vel.mag();
+      let bright = p.map(speed, 0, this.maxspeed, 80, 100);
+      let sat = p.map(speed, 0, this.maxspeed, 50, 100);
+
+      // Shift hue when moving fast (fleeing)
+      let h = this.hue;
+      if (speed > 1) {
+          h = p.map(speed, 1, this.maxspeed, this.hue, 360); // Shift towards Red
+      }
+
+      p.stroke(h, sat, bright);
       p.strokeWeight(this.r);
       p.point(this.pos.x, this.pos.y);
     }
 
     arrive(target) {
-      let desired = p5.Vector.sub(target, this.pos);
+      // Instance mode safe vector math
+      let desired = p.createVector(target.x, target.y).sub(this.pos);
       let d = desired.mag();
       let speed = this.maxspeed;
       if (d < 100) {
         speed = p.map(d, 0, 100, 0, this.maxspeed);
       }
       desired.setMag(speed);
-      let steer = p5.Vector.sub(desired, this.vel);
+
+      let steer = desired.sub(this.vel);
       steer.limit(this.maxforce);
       return steer;
     }
 
     flee(target) {
-      let desired = p5.Vector.sub(target, this.pos);
+      // Instance mode safe vector math
+      let desired = p.createVector(target.x, target.y).sub(this.pos);
       let d = desired.mag();
       if (d < 100) {
         desired.setMag(this.maxspeed);
         desired.mult(-1);
-        let steer = p5.Vector.sub(desired, this.vel);
+        let steer = desired.sub(this.vel);
         steer.limit(this.maxforce);
         return steer;
       } else {

@@ -65,6 +65,7 @@ const sketch1 = (p) => {
       #v1 input[type=range] { width: 100%; cursor: pointer; }
       #v1 textarea { width: 100%; background: #222; border: 1px solid #444; color: white; padding: 8px; border-radius: 4px; resize: vertical; min-height: 80px; box-sizing: border-box; }
       #v1 select { width: 100%; background: #222; color: white; border: 1px solid #444; padding: 8px; border-radius: 4px; }
+      #v1 input[type=checkbox] { margin-right: 8px; }
     `;
     p.createElement('style', css).parent(container);
 
@@ -134,6 +135,20 @@ const sketch1 = (p) => {
     
     p.createDiv('Speed').style('font-size:10px;color:#888;margin-bottom:4px;').parent(animInnerContent);
     p.createSlider(0.01, 0.2, params.speed, 0.01).parent(animInnerContent).input((e) => params.speed = e.target.value);
+
+    // New Effects Section
+    let effectContent = p.createDiv().class('control-section').parent(sidebar);
+    p.createDiv('EFFECTS').class('section-header').parent(effectContent);
+    let effectInner = p.createDiv().class('section-content').parent(effectContent);
+
+    p.createDiv('Echo Count').style('font-size:10px;color:#888;margin-bottom:4px;').parent(effectInner);
+    p.createSlider(1, 10, params.echoCount, 1).parent(effectInner).input((e) => params.echoCount = parseInt(e.target.value));
+
+    // Gradient Toggle
+    p.createCheckbox(' Use Gradient', params.useGradient).style('color:white;font-size:12px;margin-top:10px;').parent(effectInner).changed((e) => params.useGradient = e.target.checked);
+
+    // Noise Toggle
+    p.createCheckbox(' Use Noise', params.useNoise).style('color:white;font-size:12px;').parent(effectInner).changed((e) => params.useNoise = e.target.checked);
   }
 
   function updateGeometry() {
@@ -212,22 +227,75 @@ const sketch1 = (p) => {
     p.background(params.bgColor);
     if (fontLoaded) {
       p.noStroke();
-      for (let i = 0; i < fontData.length; i++) {
-        for (let contour of fontData[i]) {
-          p.fill(params.textColor);
-          p.beginShape();
-          for (let pt of contour) {
-            let wave = p.sin(pt.y * params.freq + p.frameCount * params.speed) * params.amp;
-            p.vertex(pt.x + wave, pt.y);
+
+      let count = params.echoCount;
+
+      // Draw from back to front
+      for (let k = 0; k < count; k++) {
+          let isMain = (k === count - 1);
+          let lagOffset = (count - 1 - k) * params.echoLag;
+
+          // Style
+          if (params.useGradient) {
+             let ctx = p.drawingContext;
+             let grad = ctx.createLinearGradient(0, 0, 0, p.height);
+             grad.addColorStop(0, params.gradientColor1);
+             grad.addColorStop(1, params.gradientColor2);
+             ctx.fillStyle = grad;
+             ctx.globalAlpha = p.map(k, 0, count, 0.1, 1.0);
+          } else {
+             let c = p.color(params.textColor);
+             // Alpha map: old echoes are transparent
+             c.setAlpha(p.map(k, 0, count, 20, 255));
+             p.fill(c);
+             p.drawingContext.globalAlpha = 1.0;
           }
-          p.endShape(p.CLOSE);
-        }
+
+          for (let i = 0; i < fontData.length; i++) {
+            for (let contour of fontData[i]) {
+              p.beginShape();
+              for (let pt of contour) {
+                // Wave calc
+                // params.speed is used for phase
+                // Add lagOffset to time
+                // Using frameCount
+                let t = (p.frameCount - lagOffset) * params.speed;
+                let phase = pt.y * params.freq + t;
+                let wave = p.sin(phase) * params.amp;
+
+                // Mouse interaction (distort)
+                if (params.mouseInteraction) {
+                     let d = p.dist(p.mouseX, p.mouseY, pt.x, pt.y);
+                     if (d < params.mouseRadius) {
+                         let angle = p.atan2(p.mouseY - pt.y, p.mouseX - pt.x);
+                         let distort = p.map(d, 0, params.mouseRadius, 20, 0);
+                         wave += p.cos(angle) * distort;
+                     }
+                }
+
+                p.vertex(pt.x + wave, pt.y);
+              }
+              p.endShape(p.CLOSE);
+            }
+          }
       }
+      p.drawingContext.globalAlpha = 1.0; // Reset
+    }
+
+    if (params.useNoise && noiseImage) {
+        p.push();
+        p.blendMode(p.OVERLAY);
+        // Tile the noise
+        for (let x = 0; x < p.width; x += noiseImage.width) {
+            for (let y = 0; y < p.height; y += noiseImage.height) {
+                p.image(noiseImage, x, y);
+            }
+        }
+        p.pop();
     }
   }
 
   p.remove = () => {
-     // Cleanup if needed
      document.body.style.backgroundColor = '';
   }
 };
