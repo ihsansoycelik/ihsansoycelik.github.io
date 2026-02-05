@@ -120,6 +120,12 @@ body {
     color: white;
 }
 
+.smart-card:focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+    z-index: 10;
+}
+
 .card-top {
     display: flex;
     justify-content: space-between;
@@ -180,6 +186,11 @@ body {
 
 .list-row.active {
     background-color: rgba(0,0,0,0.1);
+}
+
+.list-row:focus-visible {
+    outline: 2px solid var(--color-blue);
+    z-index: 10;
 }
 
 .list-icon-bg {

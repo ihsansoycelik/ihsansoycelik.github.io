@@ -95,6 +95,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.className = `list-row ${state.currentView === list.id ? 'active' : ''}`;
             li.dataset.id = list.id;
+            li.setAttribute('role', 'button');
+            li.setAttribute('tabindex', '0');
 
             const count = state.tasks.filter(t => t.listId === list.id && !t.completed).length;
 
@@ -109,6 +111,12 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
 
             li.addEventListener('click', () => switchView(list.id));
+            li.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    switchView(list.id);
+                }
+            });
             els.userLists.appendChild(li);
         });
 
@@ -224,7 +232,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupEventListeners() {
         // Smart Cards
         els.smartCards.forEach(card => {
-            card.addEventListener('click', () => switchView(card.dataset.list));
+            const action = () => switchView(card.dataset.list);
+            card.addEventListener('click', action);
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    action();
+                }
+            });
         });
 
         // New Task Interaction
@@ -346,9 +361,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Replace setupEventListeners placeholder logic with bindNewTask
-    els.smartCards.forEach(card => {
-        card.addEventListener('click', () => switchView(card.dataset.list));
-    });
     bindNewTask();
 
     // Start
