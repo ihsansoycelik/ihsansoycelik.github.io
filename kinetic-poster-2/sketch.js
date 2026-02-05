@@ -101,7 +101,12 @@ function selectElement(selector) {
     console.warn(`Element not found: ${selector}`);
     // Return a dummy object to prevent .value() crashes
     return { 
-      value: () => 0, 
+      value: () => {
+        if (selector.includes('col') || selector.includes('color')) {
+          return '#000000';
+        }
+        return 0;
+      },
       checked: () => false, 
       input: () => {}, 
       changed: () => {},

@@ -32,9 +32,13 @@ uniform float uGlow;
 uniform float uNoise;
 uniform float uAberration;
 uniform float uVignette;
+uniform float uShadowMask;
+uniform float uGlitch;
+uniform float uRefreshRate;
+uniform float uBootProgress;
 
 // Magnet Params
-uniform vec2 uMagPos; // 0.0 to 1.0
+uniform vec2 uMagPos;
 uniform float uMagStrength;
 uniform float uMagRadius;
 
@@ -58,17 +62,11 @@ float noise(vec2 st) {
 // Barrel Distortion
 vec2 curve(vec2 uv) {
     vec2 centered = uv * 2.0 - 1.0;
-
-    // Correct for aspect ratio to ensure circular distortion (Precise calculation)
     float aspect = uResolution.x / uResolution.y;
-
-    // Calculate distance from center in "square" pixel space
     vec2 aspectCorrected = centered;
     aspectCorrected.x *= aspect;
-
     float distSq = dot(aspectCorrected, aspectCorrected);
     float distortion = 1.0 + distSq * uCurve;
-
     return centered * distortion * 0.5 + 0.5;
 }
 
@@ -79,47 +77,48 @@ vec2 magnet(vec2 uv) {
     vec2 diffCorrected = diff;
     diffCorrected.x *= aspect;
     float dist = length(diffCorrected);
-    // Smooth falloff
     float pull = smoothstep(uMagRadius, 0.0, dist);
-    // Distort towards/away or swirl?
-    // Let's do a simple radial displacement
     vec2 displacement = diff * pull * uMagStrength;
-
-    // Add some noise jitter near the magnet center
     float jitter = (random(uv * uTime) - 0.5) * 0.02 * pull;
-
     return uv - displacement + vec2(jitter);
 }
 
 void main() {
     vec2 uv = vTexCoord;
 
+    // Glitch Displacement
+    if (uGlitch > 0.0) {
+        float gTime = uTime * 10.0;
+        float gProb = random(vec2(floor(uv.y * 20.0), floor(gTime)));
+        if (gProb < uGlitch * 0.5) {
+            uv.x += (random(vec2(gTime, uv.y)) - 0.5) * uGlitch * 0.5;
+        }
+    }
+
     // 1. Apply CRT Geometry Curve
     uv = curve(uv);
 
-    // Check boundaries after curve
+    // Check boundaries
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
         gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
         return;
     }
 
     // 2. Apply Magnetic Interference
-    // We apply this after curve so the magnet moves with the "screen" surface
-    // Or before? If the magnet is external, it affects the beam.
-    // Let's apply it relative to the curved surface coordinates.
-    // Need to adjust uMagPos to match the curved coordinate space visually?
-    // For simplicity, we assume magnet is close to the screen surface.
     uv = magnet(uv);
 
-    // 3. Chromatic Aberration
-    // We sample the texture at slightly different coordinates for R, G, B
-    float aber = uAberration * 0.005; // Scale down
-    // Add distance from center factor for cheap lens blur effect
+    // 3. Chromatic Aberration with Glitch
+    float aber = uAberration * 0.005;
     vec2 d = uv - vec2(0.5);
     float aspect = uResolution.x / uResolution.y;
     d.x *= aspect;
     float distFromCenter = length(d);
     aber *= (1.0 + distFromCenter);
+
+    // Glitch Color Split
+    if (uGlitch > 0.0) {
+         aber += noise(vec2(uTime * 20.0, uv.y)) * uGlitch * 0.05;
+    }
 
     vec4 col;
     col.r = texture2D(uTexture, uv + vec2(aber, 0.0)).r;
@@ -128,38 +127,48 @@ void main() {
     col.a = 1.0;
 
     // 4. Scanlines
-    // Based on screen Y coordinate
     float scanline = sin(uv.y * uResolution.y * 0.5 * 3.14159);
-    // Soften
     scanline = 0.5 + 0.5 * scanline;
-    // Blend with intensity
     col.rgb *= 1.0 - (uScanlineIntensity * (1.0 - scanline));
 
-    // 5. RGB Grid (Phosphor)
-    // Horizontal subpixels
-    float modX = mod(gl_FragCoord.x, 3.0);
-    vec3 mask = vec3(1.0);
-    if (modX < 1.0) mask = vec3(1.0, 0.5, 0.5); // R enhanced
-    else if (modX < 2.0) mask = vec3(0.5, 1.0, 0.5); // G enhanced
-    else mask = vec3(0.5, 0.5, 1.0); // B enhanced
+    // Rolling Refresh Bar (V-Sync)
+    float bar = smoothstep(0.0, 0.2, 1.0 - abs(uv.y - mod(uTime * 0.5, 1.0)));
+    col.rgb += bar * 0.05 * uRefreshRate;
 
-    col.rgb *= mix(vec3(1.0), mask, uScanlineIntensity * 0.5);
+    // 5. Shadow Mask (Trinitron Aperture Grille)
+    if (uShadowMask > 0.0) {
+        float modX = mod(gl_FragCoord.x, 3.0);
+        vec3 mask = vec3(1.0);
+        if (modX < 1.0) mask = vec3(1.0, 0.0, 0.0);
+        else if (modX < 2.0) mask = vec3(0.0, 1.0, 0.0);
+        else mask = vec3(0.0, 0.0, 1.0);
 
-    // 6. Glow / Bloom
-    // Simple approach: add a blurred version or just brighten based on intensity
-    // For a single pass shader, we can't do true bloom. We can just overdrive brightness.
-    // Or sample neighbors (expensive).
-    // Let's just boost contrast/brightness as a fake glow
+        // Blend between solid white and the mask
+        col.rgb *= mix(vec3(1.0), mask, uShadowMask);
+    } else {
+        // Fallback or low fidelity grid
+        float modX = mod(gl_FragCoord.x, 3.0);
+        vec3 mask = vec3(1.0);
+        if (modX < 1.0) mask = vec3(1.0, 0.5, 0.5);
+        else if (modX < 2.0) mask = vec3(0.5, 1.0, 0.5);
+        else mask = vec3(0.5, 0.5, 1.0);
+        col.rgb *= mix(vec3(1.0), mask, uScanlineIntensity * 0.5);
+    }
+
+    // 6. Glow
     col.rgb = pow(col.rgb, vec3(1.0 / uGlow));
     col.rgb *= uGlow;
 
-    // 7. Noise / Static
+    // 7. Noise
     float n = random(uv * uTime) * uNoise;
     col.rgb += n;
 
     // 8. Vignette
     float vig = 1.0 - distFromCenter * uVignette * 1.5;
     col.rgb *= smoothstep(0.0, 1.0, vig);
+
+    // Boot Progress Fade (CRT Warmup)
+    col.rgb *= smoothstep(0.0, 1.0, uBootProgress);
 
     // Flicker
     col.rgb *= (1.0 - 0.05 * sin(uTime * 30.0));
@@ -190,10 +199,19 @@ const defaultParams = {
     noise: 0.15,
     aberration: 1.5,
     vignette: 0.4,
+    shadowMask: 0.5,
+    glitch: 0.0,
+    refreshRate: 0.0,
     paused: false
 };
 
 let params = JSON.parse(JSON.stringify(defaultParams));
+
+// Boot Sequence State
+let bootState = 0; // 0: Off/Init, 1: Text, 2: Loading, 3: Running
+let bootProgress = 0.0;
+let bootTimer = 0;
+let bootLog = [];
 
 // Internal animation state
 let textX = 0;
@@ -215,6 +233,9 @@ function setup() {
     // Initial Magnet Pos
     params.magPos.x = 0.5;
     params.magPos.y = 0.5;
+
+    // Start boot sequence
+    triggerBoot();
 }
 
 function windowResized() {
@@ -222,38 +243,91 @@ function windowResized() {
     contentLayer.resizeCanvas(windowWidth, windowHeight);
 }
 
+function triggerBoot() {
+    bootState = 0;
+    bootProgress = 0.0;
+    bootTimer = millis();
+    bootLog = [];
+    params.refreshRate = 1.0; // Simulate initial sync search
+
+    // Simulate BIOS logs
+    setTimeout(() => { bootState = 1; bootLog.push("BIOS v1.0.4 INIT..."); }, 500);
+    setTimeout(() => { bootLog.push("CHECKING MEMORY... 640K OK"); }, 1500);
+    setTimeout(() => { bootLog.push("LOADING KERNEL..."); }, 2500);
+    setTimeout(() => { bootState = 2; }, 3500); // Progress bar
+}
+
 function draw() {
     // 1. Update Content Layer
     contentLayer.clear();
     contentLayer.background(0); // Black background for CRT content
-    contentLayer.fill(params.textColor);
-    contentLayer.textSize(params.textSize);
 
-    // Calculate Font styling
-    contentLayer.textStyle(BOLD);
-    contentLayer.textFont(params.textFont); // Retro font default
+    let now = millis();
 
-    // Animate Text
-    if (!params.paused) {
-        textX -= params.textSpeed * params.direction;
+    if (bootState < 3) {
+        // Boot Animation
+        if (bootState === 0) {
+             // Warming up
+             bootProgress = lerp(bootProgress, 0.5, 0.05);
+        } else if (bootState === 1) {
+             bootProgress = lerp(bootProgress, 1.0, 0.1);
+             contentLayer.fill('#00FF41');
+             contentLayer.textSize(24);
+             contentLayer.textAlign(LEFT, TOP);
+             contentLayer.textFont('monospace');
+             let y = 50;
+             for(let log of bootLog) {
+                 contentLayer.text(log, 50, y);
+                 y += 30;
+             }
+        } else if (bootState === 2) {
+             // Loading Bar
+             contentLayer.fill('#00FF41');
+             contentLayer.textSize(24);
+             contentLayer.textAlign(CENTER, CENTER);
+             contentLayer.text("SYSTEM LOADING", width/2, height/2 - 50);
+
+             contentLayer.noFill();
+             contentLayer.stroke('#00FF41');
+             contentLayer.rect(width/2 - 200, height/2, 400, 30);
+
+             let loadP = (now - bootTimer - 3500) / 2000.0; // 2 seconds load
+             if (loadP > 1.0) {
+                 bootState = 3;
+                 params.refreshRate = 0.2; // Stabilize
+             }
+             contentLayer.fill('#00FF41');
+             contentLayer.noStroke();
+             contentLayer.rect(width/2 - 195, height/2 + 5, 390 * min(loadP, 1.0), 20);
+        }
+    } else {
+        // Running
+        bootProgress = 1.0;
+        contentLayer.fill(params.textColor);
+        contentLayer.textSize(params.textSize);
+        contentLayer.textStyle(BOLD);
+        contentLayer.textFont(params.textFont);
+
+        // Animate Text
+        if (!params.paused) {
+            textX -= params.textSpeed * params.direction;
+        }
+
+        let textW = contentLayer.textWidth(params.text);
+
+        // Loop logic
+        if (params.direction > 0 && textX < -textW) {
+            textX = width;
+        } else if (params.direction < 0 && textX > width) {
+            textX = -textW;
+        }
+
+        // Draw text
+        contentLayer.textAlign(LEFT, CENTER);
+        contentLayer.text(params.text, textX, height / 2);
+
+        drawRetroGrid(contentLayer);
     }
-
-    let textW = contentLayer.textWidth(params.text);
-
-    // Loop logic
-    if (params.direction > 0 && textX < -textW) {
-        textX = width;
-    } else if (params.direction < 0 && textX > width) {
-        textX = -textW;
-    }
-
-    // Draw text
-    // We draw it multiple times to ensure seamless loop if needed,
-    // but for simple marquee:
-    contentLayer.text(params.text, textX, height / 2);
-
-    // Also draw a grid or some retro UI elements in the background for flair
-    drawRetroGrid(contentLayer);
 
     // 2. Apply Shader
     shader(crtShader);
@@ -262,17 +336,10 @@ function draw() {
     crtShader.setUniform('uTime', millis() / 1000.0);
     crtShader.setUniform('uResolution', [width, height]);
 
-    // Update Magnet Pos (Mouse interaction overrides manual if dragging?
-    // For now, let's make mouse passively control it if not dragging UI)
-    // Actually, user asked for draggable interference object.
-    // We'll let the mouse control it directly for the demo feel.
-    // If mouse is over UI, don't move magnet?
-    // We'll handle that logic in UI setup or assume full screen interaction.
-
-    // Update Magnet Pos if dragging on canvas (and not over UI)
+    // Update Magnet Pos
     if (mouseIsPressed && !isMouseOverUI()) {
         params.magPos.x = mouseX / width;
-        params.magPos.y = 1.0 - (mouseY / height); // Flip Y for WebGL
+        params.magPos.y = 1.0 - (mouseY / height);
     }
 
     crtShader.setUniform('uMagPos', [params.magPos.x, params.magPos.y]);
@@ -287,7 +354,12 @@ function draw() {
     crtShader.setUniform('uAberration', parseFloat(params.aberration));
     crtShader.setUniform('uVignette', parseFloat(params.vignette));
 
-    // Render a quad to fill screen with shader
+    // New Uniforms
+    crtShader.setUniform('uShadowMask', parseFloat(params.shadowMask));
+    crtShader.setUniform('uGlitch', parseFloat(params.glitch));
+    crtShader.setUniform('uRefreshRate', parseFloat(params.refreshRate));
+    crtShader.setUniform('uBootProgress', parseFloat(bootProgress));
+
     noStroke();
     rect(-width/2, -height/2, width, height);
 }
@@ -320,6 +392,9 @@ function setupUI() {
         noise: document.getElementById('CrtNoise'),
         aber: document.getElementById('CrtAberration'),
         vig: document.getElementById('CrtVignette'),
+        // New Inputs
+        mask: document.getElementById('CrtShadowMask'),
+        glitch: document.getElementById('CrtGlitch')
     };
 
     const btns = {
@@ -327,7 +402,8 @@ function setupUI() {
         full: document.getElementById('BtnFullscreen'),
         reset: document.getElementById('BtnReset'),
         toggle: document.getElementById('togglePanel'),
-        dir: document.getElementById('BtnDir')
+        dir: document.getElementById('BtnDir'),
+        reboot: document.getElementById('BtnReboot')
     };
 
     // Bind inputs to params
@@ -346,6 +422,10 @@ function setupUI() {
     inputs.noise.addEventListener('input', (e) => params.noise = parseFloat(e.target.value));
     inputs.aber.addEventListener('input', (e) => params.aberration = parseFloat(e.target.value));
     inputs.vig.addEventListener('input', (e) => params.vignette = parseFloat(e.target.value));
+
+    // Bind New Inputs
+    if(inputs.mask) inputs.mask.addEventListener('input', (e) => params.shadowMask = parseFloat(e.target.value));
+    if(inputs.glitch) inputs.glitch.addEventListener('input', (e) => params.glitch = parseFloat(e.target.value));
 
     // Buttons
     btns.pause.addEventListener('click', () => {
@@ -384,10 +464,19 @@ function setupUI() {
         inputs.aber.value = params.aberration;
         inputs.vig.value = params.vignette;
 
+        if(inputs.mask) inputs.mask.value = params.shadowMask;
+        if(inputs.glitch) inputs.glitch.value = params.glitch;
+
         // Update Buttons / Toggles
         btns.pause.textContent = params.paused ? "Play" : "Pause";
         btns.dir.textContent = params.direction === 1 ? "Right to Left" : "Left to Right";
     });
+
+    if(btns.reboot) {
+        btns.reboot.addEventListener('click', () => {
+            triggerBoot();
+        });
+    }
 
     // Panel Toggle
     const panel = document.getElementById('controlPanel');
