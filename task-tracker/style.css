@@ -367,6 +367,33 @@ body {
     border-radius: 4px;
 }
 
+/* Flag Button */
+.flag-btn {
+    opacity: 0; /* Default hidden unless flagged */
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: opacity 0.2s;
+    padding: 4px;
+    margin-right: 4px;
+}
+
+.task-row:hover .flag-btn {
+    opacity: 1;
+}
+
+.flag-btn.active {
+    opacity: 1; /* Always show if active */
+    color: var(--color-orange);
+}
+
+.flag-btn:focus-visible {
+    opacity: 1;
+    outline: 2px solid var(--color-blue);
+    border-radius: 4px;
+}
+
 /* New Task Input Area */
 .new-task-wrapper {
     padding: 12px 32px 32px 32px;

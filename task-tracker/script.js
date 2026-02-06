@@ -6,9 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
             { id: 'work', name: 'Work', color: 'orange', icon: 'briefcase' }
         ],
         tasks: [
-            { id: 1, text: 'Buy groceries', completed: false, listId: 'personal', date: new Date() },
-            { id: 2, text: 'Finish project proposal', completed: false, listId: 'work', date: new Date() },
-            { id: 3, text: 'Call Mom', completed: true, listId: 'personal', date: new Date() }
+            { id: 1, text: 'Buy groceries', completed: false, flagged: false, listId: 'personal', date: new Date() },
+            { id: 2, text: 'Finish project proposal', completed: false, flagged: true, listId: 'work', date: new Date() },
+            { id: 3, text: 'Call Mom', completed: true, flagged: false, listId: 'personal', date: new Date() }
         ],
         currentView: 'all' // 'all', 'today', 'scheduled', 'flagged', or listId
     };
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Simplified: All tasks with a date are "scheduled" in this demo
                 return state.tasks;
             case 'flagged':
-                return []; // No flag feature implemented yet
+                return state.tasks.filter(t => t.flagged);
             default:
                 return state.tasks.filter(t => t.listId === state.currentView);
         }
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // simplistic counts for demo
         els.counts.today.textContent = state.tasks.filter(t => !t.completed).length;
         els.counts.scheduled.textContent = state.tasks.filter(t => !t.completed).length;
-        els.counts.flagged.textContent = 0;
+        els.counts.flagged.textContent = state.tasks.filter(t => t.flagged && !t.completed).length;
 
         // Render User Lists
         els.userLists.innerHTML = '';
@@ -145,6 +145,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <input type="text" class="task-text" value="${escapeHtml(task.text)}" readonly>
                     <!-- <div class="task-details">Notes or Date</div> -->
                 </div>
+                <!-- Flag Icon -->
+                <button class="flag-btn ${task.flagged ? 'active' : ''}" aria-label="Flag">
+                     <svg width="16" height="16" viewBox="0 0 24 24" fill="${task.flagged ? 'orange' : 'none'}" stroke="${task.flagged ? 'orange' : 'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                        <line x1="4" y1="22" x2="4" y2="15"></line>
+                    </svg>
+                </button>
                 <!-- Delete Icon (appears on hover) -->
                 <button class="delete-btn" aria-label="Delete">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -167,6 +174,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     e.stopPropagation();
                     toggleTask(task.id);
                 }
+            });
+
+            const flagBtn = taskRow.querySelector('.flag-btn');
+            flagBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleFlag(task.id);
             });
 
             const deleteBtn = taskRow.querySelector('.delete-btn');
@@ -196,6 +209,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function toggleFlag(id) {
+        const task = state.tasks.find(t => t.id === id);
+        if (task) {
+            task.flagged = !task.flagged;
+            // If we are in 'flagged' view and unflag, it should disappear
+            renderMainView();
+            renderSidebar();
+        }
+    }
+
     function deleteTask(id) {
         state.tasks = state.tasks.filter(t => t.id !== id);
         renderMainView();
@@ -211,6 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
             id: Date.now(),
             text: text,
             completed: false,
+            flagged: false,
             listId: listId,
             date: new Date()
         };

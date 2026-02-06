@@ -1,6 +1,7 @@
 // Global variables
 let pg; // Off-screen graphics buffer
 let markers = []; // Array to store stroke points if needed, but we draw directly to pg
+let drips = []; // Array for active drips
 let uiFont;
 
 // UI State Variables
@@ -107,6 +108,16 @@ function draw() {
     image(bgImage, (width - w) / 2, (height - h) / 2, w, h);
   }
   
+  // Update and draw drips to the buffer
+  // We draw drips to PG so they become permanent part of the image
+  for (let i = drips.length - 1; i >= 0; i--) {
+    drips[i].update();
+    drips[i].show(pg);
+    if (drips[i].isDead()) {
+      drips.splice(i, 1);
+    }
+  }
+
   // Draw the drawing layer
   image(pg, 0, 0);
   
@@ -169,6 +180,41 @@ function mouseDragged(e) {
     // Optional: Add a "core" that is slightly smaller and darker for the wet center
     // pg.fill(red(drawColor), green(drawColor), blue(drawColor), 5);
     // pg.ellipse(x, y, w * 0.7, w * 0.7);
+  }
+
+  // Drip Logic: If moving slowly, add drips
+  if (speed < 5 && random() < 0.1 * dripSpeed) { // Use the global dripSpeed param
+     drips.push(new Drip(mouseX, mouseY, drawColor, dynamicWidth * random(0.3, 0.6)));
+  }
+}
+
+class Drip {
+  constructor(x, y, c, s) {
+    this.x = x;
+    this.y = y;
+    this.c = c; // p5 Color
+    this.s = s; // Size
+    this.life = random(100, 300);
+    this.speed = random(0.5, 2.0);
+  }
+
+  update() {
+    this.y += this.speed;
+    this.life -= 2;
+    this.s *= 0.99; // Shrink as it runs out of ink
+  }
+
+  show(buffer) {
+    buffer.noStroke();
+    // We want the drip to be semi-transparent but accumulate
+    let dc = color(this.c);
+    dc.setAlpha(map(this.life, 0, 300, 0, 150));
+    buffer.fill(dc);
+    buffer.ellipse(this.x, this.y, this.s, this.s);
+  }
+
+  isDead() {
+    return this.life <= 0 || this.s < 0.5;
   }
 }
 
