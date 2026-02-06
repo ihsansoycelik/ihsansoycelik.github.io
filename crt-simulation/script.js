@@ -28,10 +28,16 @@ uniform vec2 uResolution;
 // CRT Params
 uniform float uCurve;
 uniform float uScanlineIntensity;
+uniform float uShadowMask;
 uniform float uGlow;
 uniform float uNoise;
 uniform float uAberration;
 uniform float uVignette;
+
+// Signal Params
+uniform float uGlitch;
+uniform float uRefreshRate;
+uniform float uBootProgress;
 
 // Magnet Params
 uniform vec2 uMagPos; // 0.0 to 1.0
@@ -97,7 +103,16 @@ void main() {
     // 1. Apply CRT Geometry Curve
     uv = curve(uv);
 
-    // Check boundaries after curve
+    // CRT Boot Sequence (Vertical Compression)
+    // We modify uv.y to simulate vertical deflection ramping up
+    float expansion = smoothstep(0.0, 0.7, uBootProgress);
+    expansion = pow(expansion, 3.0); // Non-linear feel
+    expansion = max(expansion, 0.005); // Avoid div by zero
+
+    // Remap uv.y
+    uv.y = (uv.y - 0.5) / expansion + 0.5;
+
+    // Check boundaries after curve and boot compression
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
         gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
         return;
@@ -111,9 +126,27 @@ void main() {
     // For simplicity, we assume magnet is close to the screen surface.
     uv = magnet(uv);
 
+    // 2.5 Signal Glitch & Sync
+
+    // Sync Loss (Rolling Bar)
+    if (uRefreshRate > 0.01) {
+        float rollSpeed = uTime * uRefreshRate * 2.0;
+        uv.y = mod(uv.y - rollSpeed, 1.0);
+    }
+
+    // Glitch (Block displacement)
+    float blockNoise = 0.0;
+    if (uGlitch > 0.01) {
+        blockNoise = random(vec2(floor(uv.y * 20.0), floor(uTime * 15.0)));
+        if (blockNoise < uGlitch) {
+            uv.x += (random(vec2(uTime, uv.y)) - 0.5) * 0.1 * uGlitch;
+        }
+    }
+
     // 3. Chromatic Aberration
     // We sample the texture at slightly different coordinates for R, G, B
-    float aber = uAberration * 0.005; // Scale down
+    // Increase aberration on glitch
+    float aber = uAberration * 0.005 + (uGlitch * 0.05 * blockNoise); // Scale down
     // Add distance from center factor for cheap lens blur effect
     vec2 d = uv - vec2(0.5);
     float aspect = uResolution.x / uResolution.y;
@@ -135,15 +168,19 @@ void main() {
     // Blend with intensity
     col.rgb *= 1.0 - (uScanlineIntensity * (1.0 - scanline));
 
-    // 5. RGB Grid (Phosphor)
-    // Horizontal subpixels
+    // 5. RGB Grid (Phosphor / Shadow Mask)
+    // Use fragment coordinate for pixel-perfect mask
     float modX = mod(gl_FragCoord.x, 3.0);
     vec3 mask = vec3(1.0);
-    if (modX < 1.0) mask = vec3(1.0, 0.5, 0.5); // R enhanced
-    else if (modX < 2.0) mask = vec3(0.5, 1.0, 0.5); // G enhanced
-    else mask = vec3(0.5, 0.5, 1.0); // B enhanced
 
-    col.rgb *= mix(vec3(1.0), mask, uScanlineIntensity * 0.5);
+    // Trinitron-style aperture grille (Vertical stripes)
+    // Sharper definition than before
+    if (modX < 1.0) mask = vec3(1.0, 0.3, 0.3); // Red
+    else if (modX < 2.0) mask = vec3(0.3, 1.0, 0.3); // Green
+    else mask = vec3(0.3, 0.3, 1.0); // Blue
+
+    // Apply Shadow Mask
+    col.rgb *= mix(vec3(1.0), mask, uShadowMask);
 
     // 6. Glow / Bloom
     // Simple approach: add a blurred version or just brighten based on intensity
@@ -163,6 +200,9 @@ void main() {
 
     // Flicker
     col.rgb *= (1.0 - 0.05 * sin(uTime * 30.0));
+
+    // Boot Flash
+    col.rgb += vec3(1.0 - expansion) * 1.5;
 
     gl_FragColor = col;
 }
@@ -184,8 +224,11 @@ const defaultParams = {
     magStrength: 0.3,
     magRadius: 0.25,
     magPos: { x: 0.5, y: 0.5 },
+    glitch: 0.1,
+    refreshRate: 0.1,
     curve: 0.15,
     scanlines: 0.4,
+    shadowMask: 0.5,
     glow: 1.2,
     noise: 0.15,
     aberration: 1.5,
@@ -197,10 +240,14 @@ let params = JSON.parse(JSON.stringify(defaultParams));
 
 // Internal animation state
 let textX = 0;
+let bootStartTime = 0;
+const bootDuration = 2000;
 
 function setup() {
     let canvas = createCanvas(windowWidth, windowHeight, WEBGL);
     canvas.parent('canvas-container');
+
+    bootStartTime = millis();
 
     // Create offscreen graphics for text content
     contentLayer = createGraphics(width, height);
@@ -282,10 +329,19 @@ function draw() {
 
     crtShader.setUniform('uCurve', parseFloat(params.curve));
     crtShader.setUniform('uScanlineIntensity', parseFloat(params.scanlines));
+    crtShader.setUniform('uShadowMask', parseFloat(params.shadowMask));
     crtShader.setUniform('uGlow', parseFloat(params.glow));
     crtShader.setUniform('uNoise', parseFloat(params.noise));
     crtShader.setUniform('uAberration', parseFloat(params.aberration));
     crtShader.setUniform('uVignette', parseFloat(params.vignette));
+
+    crtShader.setUniform('uGlitch', parseFloat(params.glitch));
+    crtShader.setUniform('uRefreshRate', parseFloat(params.refreshRate));
+
+    // Calculate boot progress
+    let elapsed = millis() - bootStartTime;
+    let bootProgress = constrain(elapsed / bootDuration, 0, 1);
+    crtShader.setUniform('uBootProgress', bootProgress);
 
     // Render a quad to fill screen with shader
     noStroke();
@@ -314,8 +370,11 @@ function setupUI() {
         color: document.getElementById('TextColor'),
         magStr: document.getElementById('MagStrength'),
         magRad: document.getElementById('MagRadius'),
+        glitch: document.getElementById('GlitchIntensity'),
+        refresh: document.getElementById('RefreshRate'),
         curve: document.getElementById('CrtCurve'),
         scan: document.getElementById('CrtScanlines'),
+        mask: document.getElementById('CrtShadowMask'),
         glow: document.getElementById('CrtGlow'),
         noise: document.getElementById('CrtNoise'),
         aber: document.getElementById('CrtAberration'),
@@ -326,6 +385,7 @@ function setupUI() {
         pause: document.getElementById('BtnPause'),
         full: document.getElementById('BtnFullscreen'),
         reset: document.getElementById('BtnReset'),
+        resetMag: document.getElementById('BtnResetMagnet'),
         toggle: document.getElementById('togglePanel'),
         dir: document.getElementById('BtnDir')
     };
@@ -340,8 +400,12 @@ function setupUI() {
     inputs.magStr.addEventListener('input', (e) => params.magStrength = parseFloat(e.target.value));
     inputs.magRad.addEventListener('input', (e) => params.magRadius = parseFloat(e.target.value));
 
+    inputs.glitch.addEventListener('input', (e) => params.glitch = parseFloat(e.target.value));
+    inputs.refresh.addEventListener('input', (e) => params.refreshRate = parseFloat(e.target.value));
+
     inputs.curve.addEventListener('input', (e) => params.curve = parseFloat(e.target.value));
     inputs.scan.addEventListener('input', (e) => params.scanlines = parseFloat(e.target.value));
+    inputs.mask.addEventListener('input', (e) => params.shadowMask = parseFloat(e.target.value));
     inputs.glow.addEventListener('input', (e) => params.glow = parseFloat(e.target.value));
     inputs.noise.addEventListener('input', (e) => params.noise = parseFloat(e.target.value));
     inputs.aber.addEventListener('input', (e) => params.aberration = parseFloat(e.target.value));
@@ -363,7 +427,19 @@ function setupUI() {
         fullscreen(!fs);
     });
 
+    btns.resetMag.addEventListener('click', () => {
+        params.magStrength = defaultParams.magStrength;
+        params.magRadius = defaultParams.magRadius;
+        params.magPos = { ...defaultParams.magPos };
+
+        inputs.magStr.value = params.magStrength;
+        inputs.magRad.value = params.magRadius;
+    });
+
     btns.reset.addEventListener('click', () => {
+        // Trigger Boot
+        bootStartTime = millis();
+
         // Reset params
         params = JSON.parse(JSON.stringify(defaultParams));
 
@@ -374,11 +450,15 @@ function setupUI() {
         inputs.font.value = params.textFont;
         inputs.color.value = params.textColor;
 
+        inputs.glitch.value = params.glitch;
+        inputs.refresh.value = params.refreshRate;
+
         inputs.magStr.value = params.magStrength;
         inputs.magRad.value = params.magRadius;
 
         inputs.curve.value = params.curve;
         inputs.scan.value = params.scanlines;
+        inputs.mask.value = params.shadowMask;
         inputs.glow.value = params.glow;
         inputs.noise.value = params.noise;
         inputs.aber.value = params.aberration;
