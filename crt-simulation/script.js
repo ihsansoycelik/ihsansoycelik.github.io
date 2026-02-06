@@ -145,13 +145,42 @@ void main() {
 
     col.rgb *= mix(vec3(1.0), mask, uScanlineIntensity * 0.5);
 
-    // 6. Glow / Bloom
-    // Simple approach: add a blurred version or just brighten based on intensity
-    // For a single pass shader, we can't do true bloom. We can just overdrive brightness.
-    // Or sample neighbors (expensive).
-    // Let's just boost contrast/brightness as a fake glow
-    col.rgb = pow(col.rgb, vec3(1.0 / uGlow));
-    col.rgb *= uGlow;
+// 6. Glow / Bloom (Enhanced)
+    // We sample neighbors to create a blur, then add it to the base color
+    vec3 glow = vec3(0.0);
+    float totalWeight = 0.0;
+    // 3x3 kernel approximation for single pass performance
+    vec2 onePixel = vec2(1.0) / uResolution;
+    // Scale blur radius by uGlow
+    float radius = 2.0;
+
+    for(float x = -1.0; x <= 1.0; x++) {
+        for(float y = -1.0; y <= 1.0; y++) {
+            vec2 offset = vec2(x, y) * onePixel * radius;
+            // Distance weight
+            float weight = 1.0 / (1.0 + length(vec2(x, y)));
+            // Sample with Aberration (simplified, assuming similar abberation for neighbors)
+            vec3 neighborCol;
+             neighborCol.r = texture2D(uTexture, uv + offset + vec2(aber, 0.0)).r;
+             neighborCol.g = texture2D(uTexture, uv + offset).g;
+             neighborCol.b = texture2D(uTexture, uv + offset - vec2(aber, 0.0)).b;
+
+            glow += neighborCol * weight;
+            totalWeight += weight;
+        }
+    }
+    glow /= totalWeight;
+
+    // Apply scanlines to base, but maybe less to glow?
+    // Let's say glow sits on top of scanlines slightly, or bleeds through.
+    // Standard CRT: Scanlines are dark gaps. Glow bleeds over them.
+
+    // Apply scanlines to base col
+    col.rgb *= 1.0 - (uScanlineIntensity * (1.0 - scanline));
+
+    // Add glow (screen blend or add)
+    // Allow glow to be affected by scanlines less, simulating light bleed
+    col.rgb += glow * uGlow * 0.8;
 
     // 7. Noise / Static
     float n = random(uv * uTime) * uNoise;
@@ -198,6 +227,21 @@ let params = JSON.parse(JSON.stringify(defaultParams));
 // Internal animation state
 let textX = 0;
 
+// Boot Sequence State
+let bootState = 0; // 0: Init, 1: Lines, 2: Done
+let bootTimer = 0;
+let bootLines = [];
+const BOOT_MESSAGES = [
+    "BIOS CHECK... OK",
+    "CPU DETECTED: 8-BIT NEURAL CORE",
+    "RAM CHECK: 64KB... OK",
+    "VIDEO: SIGNAL DETECTED",
+    "LOADING KERNEL...",
+    "INITIATING VFS...",
+    "SYSTEM READY"
+];
+let currentBootLine = 0;
+
 function setup() {
     let canvas = createCanvas(windowWidth, windowHeight, WEBGL);
     canvas.parent('canvas-container');
@@ -227,33 +271,66 @@ function draw() {
     contentLayer.clear();
     contentLayer.background(0); // Black background for CRT content
     contentLayer.fill(params.textColor);
-    contentLayer.textSize(params.textSize);
+    contentLayer.noStroke();
 
-    // Calculate Font styling
-    contentLayer.textStyle(BOLD);
-    contentLayer.textFont(params.textFont); // Retro font default
+    // Boot Sequence Logic
+    if (bootState < 2) {
+        contentLayer.textSize(32);
+        contentLayer.textAlign(LEFT, TOP);
+        contentLayer.textFont('Courier New');
 
-    // Animate Text
-    if (!params.paused) {
-        textX -= params.textSpeed * params.direction;
+        // Progress Logic
+        if (millis() - bootTimer > 600) {
+            bootTimer = millis();
+            if (currentBootLine < BOOT_MESSAGES.length) {
+                bootLines.push(BOOT_MESSAGES[currentBootLine]);
+                currentBootLine++;
+            } else {
+                bootState = 2; // Done
+            }
+        }
+
+        // Render Lines
+        let y = 40;
+        for (let line of bootLines) {
+            contentLayer.text(line, 40, y);
+            y += 40;
+        }
+
+        // Blinking Cursor
+        if (floor(millis() / 500) % 2 === 0) {
+            contentLayer.rect(40, y, 20, 32);
+        }
+
+    } else {
+        // Main Application State
+        contentLayer.textSize(params.textSize);
+        contentLayer.textAlign(LEFT, CENTER);
+
+        // Calculate Font styling
+        contentLayer.textStyle(BOLD);
+        contentLayer.textFont(params.textFont); // Retro font default
+
+        // Animate Text
+        if (!params.paused) {
+            textX -= params.textSpeed * params.direction;
+        }
+
+        let textW = contentLayer.textWidth(params.text);
+
+        // Loop logic
+        if (params.direction > 0 && textX < -textW) {
+            textX = width;
+        } else if (params.direction < 0 && textX > width) {
+            textX = -textW;
+        }
+
+        // Draw text
+        contentLayer.text(params.text, textX, height / 2);
+
+        // Also draw a grid or some retro UI elements in the background for flair
+        drawRetroGrid(contentLayer);
     }
-
-    let textW = contentLayer.textWidth(params.text);
-
-    // Loop logic
-    if (params.direction > 0 && textX < -textW) {
-        textX = width;
-    } else if (params.direction < 0 && textX > width) {
-        textX = -textW;
-    }
-
-    // Draw text
-    // We draw it multiple times to ensure seamless loop if needed,
-    // but for simple marquee:
-    contentLayer.text(params.text, textX, height / 2);
-
-    // Also draw a grid or some retro UI elements in the background for flair
-    drawRetroGrid(contentLayer);
 
     // 2. Apply Shader
     shader(crtShader);
