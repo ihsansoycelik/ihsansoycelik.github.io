@@ -108,7 +108,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="list-count">${count || ''}</span>
             `;
 
+            li.tabIndex = 0;
+            li.setAttribute('role', 'button');
             li.addEventListener('click', () => switchView(list.id));
+            li.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    switchView(list.id);
+                }
+            });
             els.userLists.appendChild(li);
         });
 
@@ -225,6 +233,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Smart Cards
         els.smartCards.forEach(card => {
             card.addEventListener('click', () => switchView(card.dataset.list));
+            card.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    switchView(card.dataset.list);
+                }
+            });
         });
 
         // New Task Interaction
